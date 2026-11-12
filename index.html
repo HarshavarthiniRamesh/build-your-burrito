@@ -283,6 +283,79 @@
   .stamps { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
   .stamp { font-family: var(--hand); font-size: 26px; color: var(--cb-red); border: 3px solid var(--cb-red); border-radius: 6px; padding: 0 12px; transform: rotate(-8deg); opacity: .85; letter-spacing: 1px; white-space: nowrap; }
   .stamp.veg { color: #2F7D3A; border-color: #2F7D3A; font-size: 20px; }
+  .chip .kc { grid-column: -2; font-size: 12.5px; line-height: 1.3; white-space: nowrap; color: var(--cb-red-deep); opacity: .85; font-weight: 700; margin-top: 1px; }
+  .summary .tally { display: inline-block; margin-right: 10px; padding: 0 8px; border-radius: 3px; background: var(--paper-2); color: var(--cb-red-deep); font-variant-numeric: tabular-nums; }
+
+  /* ---- Order card: the finale ---- */
+  .finale { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px 16px;
+    background: rgba(28, 20, 14, 0); transition: background .3s steps(4); overflow-y: auto; }
+  .finale.open { background: rgba(28, 20, 14, .55); }
+  .fin-card { position: relative; width: min(980px, 100%); display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr);
+    background: var(--paper) var(--noise-soft); background-blend-mode: multiply; border-radius: 3px;
+    box-shadow: 4px 7px 0 rgba(30, 20, 10, .3), 0 30px 60px -20px rgba(0, 0, 0, .6);
+    transform: translateY(40px) rotate(-2.5deg) scale(.94); opacity: 0; transition: transform .36s steps(5, end), opacity .2s steps(3); }
+  .finale.open .fin-card { transform: rotate(-.5deg); opacity: 1; }
+  .fin-card::before, .fin-card::after { content: ""; position: absolute; top: -13px; width: 110px; height: 28px; z-index: 2;
+    background: rgba(238, 225, 186, .85);
+    clip-path: polygon(3% 8%, 10% 0, 18% 10%, 27% 2%, 36% 9%, 46% 0, 56% 8%, 66% 1%, 76% 9%, 86% 2%, 94% 9%, 100% 4%, 98% 92%, 90% 100%, 80% 91%, 70% 99%, 60% 92%, 50% 100%, 40% 91%, 30% 99%, 20% 92%, 10% 100%, 1% 94%); }
+  .fin-card::before { left: 40px; transform: rotate(-6deg); }
+  .fin-card::after { right: 44px; transform: rotate(5deg); }
+  .fin-art { position: relative; background: var(--mat); border-radius: 3px 0 0 3px; display: grid; place-items: center; padding: 28px 18px 44px; overflow: hidden; }
+  .fin-art::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 39px, rgba(255, 255, 255, .07) 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, rgba(255, 255, 255, .07) 39px 40px); }
+  .fin-art svg { overflow: visible; filter: drop-shadow(3px 6px 0 rgba(0, 0, 0, .25)); }
+  .fin-art .fa-v { position: absolute; top: 34px; bottom: 56px; left: 22px; width: calc(100% - 44px); height: calc(100% - 90px); }
+  .fin-art .fa-h { display: none; }
+  .fin-art .stamps { position: absolute; top: 18px; right: 16px; flex-direction: column; align-items: flex-end; gap: 6px; z-index: 1; }
+  .fin-art .stamp { background: rgba(255, 248, 236, .92); opacity: 1; transform: rotate(8deg); }
+  .finale.open .fin-art svg { animation: finDrop .5s steps(5, end) both .12s; }
+  @keyframes finDrop { from { transform: translateY(-18px) rotate(-3deg) scale(.9); opacity: 0; } }
+  .fin-cap { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%) rotate(-1.5deg); font-family: var(--hand); font-size: 18px; color: var(--ink);
+    background: var(--paper); padding: 2px 12px 0; box-shadow: 2px 2px 0 rgba(0, 0, 0, .2); white-space: nowrap; }
+  .fin-rc { position: relative; padding: 26px 26px 20px; min-width: 0; display: flex; flex-direction: column; }
+  .fin-rc h2 { font-size: 32px; text-wrap: balance; padding-right: 30px; }
+  .fin-x { position: absolute; top: 8px; right: 10px; z-index: 3; width: 36px; height: 36px; border: 0; background: none; cursor: pointer;
+    font-family: var(--hand); font-size: 30px; line-height: 1; color: var(--ink-soft); border-radius: 50%; }
+  .fin-x:hover, .fin-x:focus-visible { background: var(--paper-2); color: var(--ink); }
+  .fin-lines { list-style: none; margin: 16px 0 0; padding: 0; font-family: var(--hand); }
+  .fin-lines li { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; padding: 3px 0 2px; border-bottom: 2px dotted rgba(59, 42, 35, .14); }
+  .fin-lines .fl { color: var(--ink-soft); font-size: 15px; }
+  .fin-lines .fi { font-size: 19px; line-height: 1.15; }
+  .fin-lines .fk { font-size: 18px; font-variant-numeric: tabular-nums; text-align: right; min-width: 3ch; }
+  .fin-lines .fh { border: 0; padding: 0; }
+  .fin-lines .fh .fk { font-size: 14px; color: var(--ink-soft); }
+  .fin-total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; padding-top: 8px; border-top: 3px double rgba(59, 42, 35, .45); font-family: var(--hand); }
+  .fin-total span { font-size: 22px; }
+  .fin-total b { font-weight: 400; font-size: 34px; color: var(--cb-red); font-variant-numeric: tabular-nums; line-height: 1; }
+  .fin-total small { font-size: 18px; }
+  .fin-mac { display: grid; gap: 4px; margin-top: 10px; font-family: var(--hand); }
+  .fin-mac div { display: grid; grid-template-columns: 64px minmax(0, 1fr) 48px; gap: 10px; align-items: center; }
+  .fin-mac span { font-size: 16px; color: var(--ink-soft); }
+  .fin-mac i { height: 10px; background: var(--paper-2); border-radius: 2px; position: relative; overflow: hidden; }
+  .fin-mac i::after { content: ""; position: absolute; inset: 0; width: var(--w); background: var(--cb-yellow); border-radius: 2px; }
+  .fin-mac div:nth-child(2) i::after { background: #E89A5C; }
+  .fin-mac div:nth-child(3) i::after { background: var(--cb-red); opacity: .75; }
+  .fin-mac b { font-weight: 400; font-size: 16px; text-align: right; font-variant-numeric: tabular-nums; }
+  .fin-note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); }
+  .fin-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: auto; padding-top: 16px; }
+  @media (max-width: 760px) {
+    .finale { place-items: start center; padding: 18px 12px; }
+    .fin-card { grid-template-columns: minmax(0, 1fr); }
+    .fin-art { border-radius: 3px 3px 0 0; padding: 22px 10px 40px; }
+    .fin-art .fa-v { display: none; }
+    .fin-art .fa-h { display: block; position: relative; width: 100%; height: auto; }
+    .fin-art .stamps { top: 10px; left: 10px; right: auto; align-items: flex-start; transform: scale(.7); transform-origin: top left; }
+    .fin-x { background: var(--paper); box-shadow: 1px 2px 0 rgba(0, 0, 0, .2); }
+    .fin-rc { padding: 18px 16px 16px; }
+    .fin-rc h2 { font-size: 27px; }
+    .fin-lines li { grid-template-columns: 58px minmax(0, 1fr) auto; gap: 8px; }
+    .fin-lines .fi { font-size: 17px; }
+    .fin-total b { font-size: 30px; }
+    .fin-foot .btn { font-size: 18px; padding: 8px 14px 6px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .finale, .fin-card { transition: none; }
+    .finale.open .fin-art svg { animation: none; }
+  }
 
   @media (max-width: 640px) {
     .panel { bottom: 10px; padding: 12px 12px 10px; width: calc(100% - 20px); }
@@ -404,6 +477,7 @@
   <div class="flicker"></div>
   <section class="panel" id="panel" aria-live="polite"></section>
 </main>
+<div class="finale" id="finale" role="dialog" aria-modal="true" aria-labelledby="fin-title" hidden></div>
 
 <script>
 const startApp = () => {
@@ -501,6 +575,24 @@ const STEPS = [
   { id: 'drink', label: 'Drink', title: 'Something to drink?', staff: 'Anything to drink?', mode: 'single', hint: 'Optional · one cup', options: ['sunrise', 'pink_lemonade', 'peach_tea'] },
   { id: 'pay', label: 'Pay', staff: 'All set! Enjoy your meal' },
 ];
+// Nutrition per serving, regular size: [kcal, fat g, protein g, carbs g], from the restaurant's published nutrition info.
+// Rice portions depend on what it goes into. Salad greens, brownies and the drinks aren't listed there, so they stay null.
+const NUT = {
+  burrito: [142, 1.9, 3.7, 29.2], bowl: [0, 0, 0, 0], tacos: [171, 2.4, 4.5, 35.1], nachos: [295, 19.6, 3.4, 28.3],
+  black_beans: [94, 3.4, 4.9, 13.3], pinto_beans: [71, 1.8, 3.7, 10.5],
+  crispy_mushroom: [209, 15.3, 4.8, 14.5], bbq_chicken: [190, 10.2, 21.4, 1.8], peri_chicken: [238, 13.4, 19.4, 13.8], chipotle_chicken: [207, 11.8, 18, 7],
+  mexican_paneer: [291, 22.6, 13.5, 7.5], bbq_paneer: [302, 20.6, 13.6, 16.1], peri_potato: [187, 3.7, 4, 34.8],
+  tomato_onion: [13, .1, .6, 2.9], corn: [41, .6, 1.6, 8.9], tomatillo: [7, .1, .2, 1.4], red_chilli: [14, .3, .4, 2.8],
+  onion_capsicum: [28, .6, 1.4, 5.5], sour_cream: [57, 5.6, .5, 1.1], cheese: [23, 1.8, 1.2, 0], lettuce: [2, 0, .1, 0], jalapeno: [1, 0, 0, .1],
+  veggie_mix: [10, .1, .4, 2.3], sunflower: [9, .2, .2, 1.9], guac: [148, 13.3, 1.9, 9.2], corn_chips: [10, .2, .3, 1.8], chipotle_mayo: [24, .8, .8, 3.6],
+  southwest: [18, .2, .6, 3.6], habanero: [9, .3, .1, .9], mango_salsa: [9, .2, .2, 1.9],
+  churros: [364, 19, 4.4, 43.9], chocodilla: [549, 21.8, 9.6, 79.7],
+};
+const RICE_NUT = {
+  burrito: { lime_rice: [158, 3.5, 2.8, 27.9], brown_rice: [135, 1.6, 2.8, 26.7] },
+  salad: { lime_rice: [266, 6.6, 8.8, 66], brown_rice: [135, 1.6, 2.8, 26.7] },
+  bowl: { lime_rice: [314, 6.9, 5.5, 55.5], brown_rice: [268, 3.3, 5.6, 53.2] },   // also tacos & nachos
+};
 const TOOL = { base: 'place', rice: 'spoon', beans: 'slotted', protein: 'tongs', salsa: 'spoon', toppings: 'pinch', dessert: 'tongs', drink: 'cup' };
 
 /* ================= Geometry ================= */
@@ -1264,7 +1356,7 @@ let hopT = 0;
 function handOver(toTray) {
   clearTimeout(hopT);
   const y0 = mealY, y1 = toTray ? TRAY_Y : BOARD_Y, N = 8;
-  if (reduced || y0 === y1) { mealY = y1; me.classList.toggle('holding', toTray); return placeTray(shownTray); }
+  if (reduced || y0 === y1) { mealY = y1; me.classList.toggle('holding', toTray); placeTray(shownTray); if (toTray) hopT = setTimeout(() => step === PAY && openFinale(), 600); return; }
   let k = 0;
   const tick = () => {
     k++;
@@ -1272,7 +1364,7 @@ function handOver(toTray) {
     mealY = y0 + (y1 - y0) * u - Math.sin(u * Math.PI) * 50;
     placeTray(shownTray);
     if (k < N) hopT = setTimeout(tick, 80);
-    else me.classList.toggle('holding', toTray);
+    else { me.classList.toggle('holding', toTray); if (toTray) hopT = setTimeout(() => step === PAY && openFinale(), 900); }
   };
   hopT = setTimeout(tick, 80);
 }
@@ -1427,6 +1519,7 @@ let step = 0, maxStep = 0, autoT;
 
 function go(i) {
   clearTimeout(autoT);
+  closeFinale(true);
   const leavingPay = step === PAY && i !== PAY;
   step = i; maxStep = Math.max(maxStep, i);
   cam.querySelectorAll('.station').forEach(el => el.classList.toggle('active', +el.dataset.i === i));
@@ -1503,10 +1596,20 @@ function makeSwatch(id) {
 const vegMark = v => `<span class="vm ${v ? 'veg' : 'nv'}" title="${v ? 'Vegetarian' : 'Non-vegetarian'}"></span>`;
 const markerCheck = `<svg class="ck" viewBox="0 0 34 34" aria-hidden="true"><path d="M17 3C8 3 3 9 3.5 17.5S10 31 17.5 30.5 31 24 30.5 16 24 3.5 15 4" fill="#FFF8EC" stroke="#D8463B" stroke-width="2.6" stroke-linecap="round"/><path d="M10 17l5 6 10-13" fill="none" stroke="#D8463B" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const tilt = i => [-.9, .6, -.4, .8, -.7, .5][i % 6];
+const nut = id => RICE_NUT.bowl[id] ? (RICE_NUT[sel.base[0]] || RICE_NUT.bowl)[id] : NUT[id] || null;
+const kcalOf = id => { const n = nut(id); return n ? n[0] : null; };
+const totals = () => {
+  const ids = STEPS.slice(0, PAY).flatMap(s => sel[s.id]), t = [0, 0, 0, 0];
+  let missing = [];
+  for (const id of ids) { const n = nut(id); if (n) n.forEach((v, k) => t[k] += v); else missing.push(id); }
+  return { t, missing };
+};
+const fmtK = n => Math.round(n).toLocaleString('en-IN');
 
 function summaryText() {
   const parts = STEPS.slice(0, PAY).flatMap(s => sel[s.id].map(id => ING[id].short));
-  return parts.length ? `<b>${parts[0]}</b>${parts.length > 1 ? ' · ' + parts.slice(1).join(' · ') : ''}` : 'Your tray is empty — pick something!';
+  const kc = parts.length ? `<span class="tally">${fmtK(totals().t[0])} kcal</span>` : '';
+  return parts.length ? kc + `<b>${parts[0]}</b>${parts.length > 1 ? ' · ' + parts.slice(1).join(' · ') : ''}` : 'Your tray is empty — pick something!';
 }
 function primaryLabel(i) {
   const st = STEPS[i], arr = sel[st.id];
@@ -1528,13 +1631,14 @@ function panelHTML(i) {
     <div class="phead"><div><div class="kicker">Step ${i + 1} of ${PAY} · ${st.label}</div><h2>${st.title}</h2></div><div class="hint">${st.hint}</div></div>
     <div class="chips ${n > 4 ? "dense many" : ""}">${st.options.map((id, k) => {
       const ing = ING[id], on = arr.includes(id);
-      return `<button class="chip ${on ? 'on' : ''}" data-id="${id}" aria-pressed="${on}" style="--r:${tilt(k)}deg">${swatch(id)}${(() => { const vm = st.id !== 'base' && ing.veg !== undefined; return `<span class="tx ${vm ? 'hasvm' : ''}">${vm ? vegMark(ing.veg) : ''}<span class="nm">${ing.name}</span><span class="sb">${ing.sub}</span></span>`; })()}${markerCheck}</button>`;
+      return `<button class="chip ${on ? 'on' : ''}" data-id="${id}" aria-pressed="${on}" style="--r:${tilt(k)}deg">${swatch(id)}${(() => { const vm = st.id !== 'base' && ing.veg !== undefined; return `<span class="tx ${vm ? 'hasvm' : ''}">${vm ? vegMark(ing.veg) : ''}<span class="nm">${ing.name}</span><span class="sb">${ing.sub}</span>${kcalOf(id) !== null ? `<span class="kc">${kcalOf(id)} kcal</span>` : ''}</span>`; })()}${markerCheck}</button>`;
     }).join('')}</div>
     <div class="pfoot"><button class="btn ghost" data-act="back" ${i === 0 ? 'disabled' : ''}>← Back</button><div class="summary">${summaryText()}</div><button class="btn primary" data-act="next" ${canNext ? '' : 'disabled'}>${primary}</button></div>`;
 }
 function receiptHTML(no) {
   const allVeg = STEPS.slice(1, PAY).every(s => sel[s.id].every(id => ING[id].veg !== 0));
-  const rows = STEPS.slice(0, PAY).map(s => `<div><span>${s.label}</span><b>${sel[s.id].length ? sel[s.id].map(id => ING[id].name).join(', ') : '—'}</b></div>`).join('');
+  const rows = STEPS.slice(0, PAY).map(s => { const kc = sel[s.id].reduce((a, id) => a + (kcalOf(id) || 0), 0);
+    return `<div><span>${s.label}${kc ? ` · ${fmtK(kc)} kcal` : ''}</span><b>${sel[s.id].length ? sel[s.id].map(id => ING[id].name).join(', ') : '—'}</b></div>`; }).join('');
   const what = sel.base[0] ? ING[sel.base[0]].name.toLowerCase() : 'meal';
   // one-line version for phones: single picks by name, several as a count
   const rsum = STEPS.slice(0, PAY).filter(s => sel[s.id].length).map(s => sel[s.id].length > 1 ? `${sel[s.id].length} ${s.id === 'protein' ? 'fillings' : s.id === 'dessert' ? 'desserts' : s.label.toLowerCase()}` : ING[sel[s.id][0]].short).join(' · ');
@@ -1543,7 +1647,7 @@ function receiptHTML(no) {
     <div class="rsum">${rsum}</div>
     <button class="rtoggle" data-act="receipt">See full receipt</button>
     <div class="receipt">${rows}</div>
-    <div class="pfoot"><button class="btn ghost" data-act="back">← Change<span class="long"> something</span></button><div class="summary"></div><button class="btn primary" data-act="again">Build another</button></div>`;
+    <div class="pfoot"><button class="btn ghost" data-act="back">← Change<span class="long"> something</span></button><div class="summary"><button class="rtoggle" data-act="finale">Open order card</button></div><button class="btn primary" data-act="again">Build another</button></div>`;
 }
 function renderPanel() {
   if (step === PAY) return renderReceipt();
@@ -1552,9 +1656,11 @@ function renderPanel() {
   if (same) { const c = panelEl.querySelector('.chips'); if (c) c.scrollLeft = sx; }
   renderPanel.last = step;
 }
+let orderNo = 0;
 function renderReceipt() {
   panelEl.classList.remove('full');
-  panelEl.innerHTML = receiptHTML(100 + Math.floor(Math.random() * 900));
+  orderNo = 100 + Math.floor(Math.random() * 900);
+  panelEl.innerHTML = receiptHTML(orderNo);
   renderPanel.last = PAY;
 }
 function renderSteps() {
@@ -1595,6 +1701,77 @@ function reset() {
   go(0);
 }
 
+/* ---- the order card: a bigger look at the meal + an itemised receipt, once it's handed over ---- */
+const finale = document.getElementById('finale');
+let finaleFrom = null;
+function finaleArt() {
+  // the meal as it sits on the tray, unwrapped so you can see what's inside
+  const g = tray.cloneNode(true);
+  g.removeAttribute('id'); g.removeAttribute('transform');
+  g.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+  g.querySelectorAll('.shrink').forEach(el => el.classList.remove('shrink'));
+  g.querySelectorAll('.fade-out').forEach(el => el.remove());
+  const wrap = g.children[g.children.length - 2];   // tWrap: foil, lid and sparkles stay on the counter
+  if (wrap) wrap.innerHTML = '';
+  // upright on the tall desktop column, flat across the top on phones
+  return `<svg class="fa-v" viewBox="-80 -178 160 356" aria-hidden="true"><g transform="rotate(90)">${g.outerHTML}</g></svg><svg class="fa-h" viewBox="-174 -76 348 152" aria-hidden="true">${g.outerHTML}</svg>`;
+}
+function finaleHTML() {
+  const base = sel.base[0], what = base ? ING[base].name.toLowerCase() : 'meal';
+  const allVeg = STEPS.slice(1, PAY).every(s => sel[s.id].every(id => ING[id].veg !== 0));
+  const { t, missing } = totals();
+  const lines = STEPS.slice(0, PAY).filter(s => sel[s.id].length).map(s => sel[s.id].map((id, k) => {
+    const kc = kcalOf(id);
+    return `<li><span class="fl">${k ? '' : s.label}</span><span class="fi">${ING[id].name}</span><span class="fk">${kc === null ? '—' : kc}</span></li>`;
+  }).join('')).join('');
+  const mac = [['Protein', t[2]], ['Carbs', t[3]], ['Fat', t[1]]];
+  const macMax = Math.max(1, ...mac.map(m => m[1]));
+  const notCounted = missing.map(id => ING[id].short.toLowerCase());
+  return `
+    <div class="fin-card" role="document">
+      <button class="fin-x" data-fin="close" aria-label="Close">×</button>
+      <div class="fin-art">${finaleArt()}<div class="stamps">${allVeg ? '<span class="stamp veg">100% VEG</span>' : ''}<span class="stamp">READY!</span></div><div class="fin-cap">What's inside</div></div>
+      <div class="fin-rc">
+        <div class="kicker">Order #${orderNo} · ready at the counter</div>
+        <h2 id="fin-title">Your ${what}, made your way</h2>
+        <ul class="fin-lines"><li class="fh"><span class="fl"></span><span class="fi"></span><span class="fk">kcal</span></li>${lines}</ul>
+        <div class="fin-total"><span>Total</span><b>${fmtK(t[0])} <small>kcal</small></b></div>
+        <div class="fin-mac">${mac.map(([n, v]) => `<div><span>${n}</span><i style="--w:${(v / macMax * 100).toFixed(1)}%"></i><b>${Math.round(v)} g</b></div>`).join('')}</div>
+        <p class="fin-note">Regular portions, from the published nutrition info.${notCounted.length ? ` ${notCounted.join(', ').replace(/^./, c => c.toUpperCase())} ${notCounted.length > 1 ? "aren't" : "isn't"} listed, so ${notCounted.length > 1 ? "they're" : "it's"} not counted.` : ''}</p>
+        <div class="fin-foot"><button class="btn ghost" data-fin="back">← Change something</button><button class="btn primary" data-fin="again">Build another</button></div>
+      </div>
+    </div>`;
+}
+function openFinale() {
+  if (step !== PAY || finale.classList.contains('open')) return;
+  finaleFrom = document.activeElement;
+  finale.innerHTML = finaleHTML();
+  finale.hidden = false;
+  void finale.offsetWidth;
+  finale.classList.add('open');
+  finale.querySelector('[data-fin="again"]').focus({ preventScroll: true });
+}
+function closeFinale(instant) {
+  if (!finale.classList.contains('open')) return;
+  finale.classList.remove('open');
+  const done = () => { if (!finale.classList.contains('open')) { finale.hidden = true; finale.innerHTML = ''; } };
+  instant || reduced ? done() : setTimeout(done, 260);
+  if (finaleFrom && document.contains(finaleFrom) && !instant) finaleFrom.focus({ preventScroll: true });
+}
+finale.addEventListener('click', e => {
+  const act = e.target.closest('[data-fin]')?.dataset.fin;
+  if (e.target === finale || act === 'close') return closeFinale();
+  if (act === 'back') { closeFinale(true); go(PAY - 1); }
+  if (act === 'again') { closeFinale(true); reset(); }
+});
+// keep Tab inside the card while it's open
+finale.addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+  const f = [...finale.querySelectorAll('button')], a = f[0], z = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
+  else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
+});
+
 /* ---- events ---- */
 panelEl.addEventListener('click', e => {
   const chip = e.target.closest('.chip'); if (chip) return choose(chip.dataset.id);
@@ -1602,11 +1779,13 @@ panelEl.addEventListener('click', e => {
   if (act === 'next') go(step + 1);
   if (act === 'back') go(Math.max(0, step - 1));
   if (act === 'again') reset();
+  if (act === 'finale') openFinale();
   if (act === 'receipt') { const open = panelEl.classList.toggle('full'); e.target.textContent = open ? 'Hide receipt' : 'See full receipt'; layout(); }
 });
 cam.addEventListener('click', e => { const p = e.target.closest('.station.active .pan'); if (p) choose(p.dataset.id); });
 document.getElementById('steps').addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (b && !b.disabled) go(+b.dataset.step); });
 addEventListener('keydown', e => {
+  if (finale.classList.contains('open')) { if (e.key === 'Escape') closeFinale(); return; }
   if (e.key === 'ArrowRight' && step < PAY && (!STEPS[step].required || sel[STEPS[step].id].length)) go(step + 1);
   if (e.key === 'ArrowLeft' && step > 0) go(step - 1);
 });
