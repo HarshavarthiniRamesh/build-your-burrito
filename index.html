@@ -93,6 +93,28 @@
     .steps button.cur .n { width: 24px; border-radius: 5px; background: var(--paper); }
   }
 
+  /* ---- Loader: a tortilla gets filled, rolled and foil-wrapped (stop-motion steps) ---- */
+  .loader { position: fixed; inset: 0; z-index: 20; display: grid; place-content: center; justify-items: center; gap: 6px; background: var(--paper); color: var(--ink); transition: transform .6s steps(6, end); }
+  .loader.out { transform: translateY(-104%); }
+  .loader svg { width: min(260px, 64vw); height: auto; filter: drop-shadow(3px 5px 0 rgba(59, 42, 35, .18)); }
+  .loader p { margin: 0; font-family: var(--hand); font-size: 22px; color: var(--ink-soft); }
+  .ld-open, .ld-roll, .ld-fill, .ld-foil, .ld-sticker { transform-box: fill-box; }
+  .ld-fill { animation: ldFill 2.8s steps(1) infinite; }
+  .ld-open { transform-origin: center; animation: ldOpen 2.8s steps(1) infinite; }
+  .ld-roll { transform-origin: center; animation: ldRoll 2.8s steps(1) infinite; }
+  .ld-foil { animation: ldFoil 2.8s steps(1) infinite; }
+  .ld-sticker { transform-origin: center; animation: ldSticker 2.8s steps(1) infinite; }
+  @keyframes ldFill { 0% { opacity: 0; } 8% { opacity: 1; clip-path: inset(0 70% 0 0); } 15% { clip-path: inset(0 40% 0 0); } 22% { clip-path: inset(0 0 0 0); } }
+  @keyframes ldOpen { 0%, 32% { opacity: 1; transform: none; } 36% { transform: scaleY(.66); } 40% { transform: scaleY(.46); } 44%, 100% { opacity: 0; } }
+  @keyframes ldRoll { 0%, 40% { opacity: 0; transform: scaleY(.6); } 44% { opacity: 1; transform: scaleY(1.08); } 48%, 100% { opacity: 1; transform: none; } }
+  @keyframes ldFoil { 0%, 54% { transform: translateX(-104%); } 58% { transform: translateX(-75%); } 62% { transform: translateX(-46%); } 66% { transform: translateX(-20%); } 70%, 100% { transform: none; } }
+  @keyframes ldSticker { 0%, 74% { opacity: 0; transform: scale(1.6) rotate(-20deg); } 78% { opacity: 1; transform: scale(.9); } 82%, 94% { opacity: 1; transform: none; } 97%, 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .ld-fill, .ld-open, .ld-roll, .ld-foil, .ld-sticker { animation: none; }
+    .ld-open { opacity: 0; }
+    .loader { transition: none; }
+  }
+
   /* ---- Stage ---- */
   .stage { position: relative; overflow: hidden; background: var(--mat); }
   #cam {
@@ -101,7 +123,7 @@
     will-change: transform;
   }
   /* the scene is a stack of svg sheets; static ones are drawn once and cached, so small animations never repaint the whole kitchen */
-  .lay { position: absolute; left: 0; top: 0; display: block; overflow: visible; will-change: transform; pointer-events: none; }
+  .lay { position: absolute; left: 0; top: 0; display: block; overflow: visible; pointer-events: none; }
   .lay.hit { pointer-events: auto; }
   .grain { position: absolute; inset: 0; pointer-events: none; opacity: .45; mix-blend-mode: multiply; background-image: var(--noise); }
   .blotch {
@@ -319,6 +341,13 @@
     .stamp { font-size: 18px; }
     .stamp.veg { font-size: 14px; }
   }
+  /* while the camera slides, the kitchen holds still so only the slide is drawn */
+  .stage.moving .lay *, .stage.moving .flicker { animation-play-state: paused !important; }
+  /* phones: skip the full-screen blend-mode overlays (they re-composite the whole stage on every change) */
+  @media (max-width: 760px), (pointer: coarse) {
+    .flicker, .blotch { display: none; }
+    .grain { mix-blend-mode: normal; opacity: .14; }
+  }
   @media (prefers-reduced-motion: reduce) {
     .bub, .flame, .toss, .shake2, .boil, .eyes, .talk .mouth, .talk .smile, .talk .hop, .chewing .mouth, .sway, .flag, .steam path, .yum, .flicker, #me.walking .legA, #me.walking .legB { animation: none; }
     .pop, .wrap-in, #bubbleInner.pop { animation-duration: .01s; }
@@ -340,6 +369,33 @@
   <nav class="steps" id="steps" aria-label="Steps"></nav>
 </header>
 
+<div class="loader" id="loader" role="status" aria-label="Loading">
+  <svg viewBox="-110 -80 220 160" aria-hidden="true">
+    <defs><clipPath id="ldClip"><rect x="-74" y="-30" width="148" height="60" rx="30"/></clipPath></defs>
+    <g class="ld-open">
+      <circle r="66" fill="#E2C690"/><circle r="62" fill="#F2DFB3"/>
+      <g fill="#B98A4A" opacity=".45"><circle cx="-34" cy="-30" r="4"/><circle cx="30" cy="-38" r="3"/><circle cx="40" cy="28" r="4"/><circle cx="-28" cy="36" r="3"/><circle cx="4" cy="-48" r="2.5"/></g>
+      <g class="ld-fill">
+        <rect x="-48" y="-14" width="96" height="28" rx="12" fill="#F3EDDF"/>
+        <g fill="#2A2226"><ellipse cx="-34" cy="-4" rx="5" ry="3.4"/><ellipse cx="-22" cy="6" rx="5" ry="3.4"/><ellipse cx="-10" cy="-6" rx="5" ry="3.4"/></g>
+        <g fill="#A24A2A"><rect x="0" y="-8" width="11" height="9" rx="2"/><rect x="14" y="2" width="11" height="9" rx="2"/></g>
+        <g fill="#E2513F"><rect x="28" y="-9" width="6" height="6"/><rect x="36" y="2" width="6" height="6"/></g>
+        <g fill="#A6CF6B"><rect x="-4" y="5" width="10" height="4" transform="rotate(20)"/><rect x="24" y="-12" width="10" height="4" transform="rotate(-15 29 -10)"/></g>
+      </g>
+    </g>
+    <g class="ld-roll">
+      <rect x="-74" y="-30" width="148" height="60" rx="30" fill="#F2DFB3" stroke="#E2C690" stroke-width="3"/>
+      <path d="M-40 -28Q-34 0 -40 28M10 -29Q16 0 10 29" stroke="#D9BC86" stroke-width="2" fill="none"/>
+      <g clip-path="url(#ldClip)"><g class="ld-foil">
+        <rect x="-80" y="-34" width="160" height="68" fill="#C9CED2"/>
+        <path d="M-56 -26l6 12-4 14 5 12M-16 -28l-4 14 5 12-3 16M24 -28l5 12-5 12 4 16M56 -24l-6 12 5 12-4 12" stroke="#fff" stroke-width="2" fill="none" opacity=".8"/>
+      </g></g>
+      <g class="ld-sticker"><circle r="13" fill="#D8463B"/><circle r="5.5" fill="#F5B83D"/></g>
+    </g>
+  </svg>
+  <p>Warming up the tortillas…</p>
+</div>
+
 <main class="stage" id="stage">
   <div id="cam"></div>
   <div class="blotch"></div>
@@ -350,7 +406,7 @@
 </main>
 
 <script>
-(() => {
+const startApp = () => {
 const INK = '#3B2A23';
 
 /* ================= Data ================= */
@@ -1203,9 +1259,11 @@ function relayout() { measurePanels(); layout(); }
 function moveTo(x, onArrive) {
   camX = trayX = x;
   clearTimeout(moveRaf);
+  stage.classList.remove('moving');
   const c0 = shownCam, t0 = shownTray, N = 12, D = 1100;
   if (reduced || (c0 === x && t0 === x)) { shownCam = x; placeTray(x); layout(); me.classList.remove('walking'); onArrive && onArrive(); return; }
   me.classList.add('walking');
+  stage.classList.add('moving'); LAYERS.forEach(l => l.pauseAnimations());
   const ease = u => u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
   let k = 0;
   const tick = () => {
@@ -1215,7 +1273,7 @@ function moveTo(x, onArrive) {
     placeTray(t0 + (x - t0) * e);
     layout();
     if (k < N) moveRaf = setTimeout(tick, D / N);
-    else { me.classList.remove('walking'); onArrive && onArrive(); }
+    else { me.classList.remove('walking'); stage.classList.remove('moving'); LAYERS.forEach(l => l.unpauseAnimations()); onArrive && onArrive(); }
   };
   moveRaf = setTimeout(tick, D / N);
 }
@@ -1319,7 +1377,9 @@ function pour(si, oi, id, done) {
 }
 // walkers + idle ticks at ~8fps
 function tickWalkers() {
+  if (stage.classList.contains('moving')) return;
   const now = performance.now() / 1000;
+  const vx0 = -parseFloat(cam.style.transform.slice(10) || 0) / scale - 80, vx1 = vx0 + stage.clientWidth / scale + 160;
   for (const w of WALKERS) {
     const t = (now + 4) % w.cycle - w.start;
     const shown = t >= 0 && t < w.len;
@@ -1327,6 +1387,7 @@ function tickWalkers() {
     if (!shown) continue;
     const p = (t / w.len) * w.len0;
     const a = w.path.getPointAtLength(p), b = w.path.getPointAtLength(Math.min(w.len0, p + 3));
+    if (a.x < vx0 || a.x > vx1) continue;
     if (Math.abs(b.x - a.x) > .2) w.dir = b.x < a.x ? -1 : 1;   // keep facing the same way on vertical stretches
     w.el.setAttribute('transform', `translate(${f(a.x)} ${f(a.y)})`);
     w.flip.setAttribute('transform', `scale(${w.dir || 1} 1)`);
@@ -1384,7 +1445,7 @@ function choose(id) {
       return;
     } else { arr.push(id); fetch(() => { if (sel[st.id].includes(id) && !fills.has(id)) addFill(id); }); }
   }
-  syncPans(); renderPanel(); renderSteps();
+  syncPans(); updatePanel(); renderSteps();
 }
 function syncPans() {
   const on = new Set(Object.values(sel).flat());
@@ -1422,11 +1483,22 @@ function summaryText() {
   const parts = STEPS.slice(0, PAY).flatMap(s => sel[s.id].map(id => ING[id].short));
   return parts.length ? `<b>${parts[0]}</b>${parts.length > 1 ? ' · ' + parts.slice(1).join(' · ') : ''}` : 'Your tray is empty — pick something!';
 }
+function primaryLabel(i) {
+  const st = STEPS[i], arr = sel[st.id];
+  return i === PAY - 1 ? (arr.length ? 'Head to the counter →' : 'No thanks, pay →') : arr.length || st.required ? `Next: ${STEPS[i + 1].label} →` : `Skip →`;
+}
+function updatePanel() {
+  const st = STEPS[step], arr = sel[st.id];
+  panelEl.querySelectorAll('.chip').forEach(c => { const on = arr.includes(c.dataset.id); c.classList.toggle('on', on); c.setAttribute('aria-pressed', on); });
+  const btn = panelEl.querySelector('[data-act="next"]');
+  if (btn) { btn.textContent = primaryLabel(step); btn.disabled = !(!st.required || arr.length); }
+  const sm = panelEl.querySelector('.summary'); if (sm) sm.innerHTML = summaryText();
+}
 function panelHTML(i) {
   const st = STEPS[i], arr = sel[st.id], n = st.options.length;
   const nextLabel = STEPS[i + 1].label;
   const canNext = !st.required || arr.length > 0;
-  const primary = i === PAY - 1 ? (arr.length ? 'Head to the counter →' : 'No thanks, pay →') : arr.length || st.required ? `Next: ${nextLabel} →` : `Skip →`;
+  const primary = primaryLabel(i);
   return `
     <div class="phead"><div><div class="kicker">Step ${i + 1} of ${PAY} · ${st.label}</div><h2>${st.title}</h2></div><div class="hint">${st.hint}</div></div>
     <div class="chips ${n > 4 ? "dense many" : ""}">${st.options.map((id, k) => {
@@ -1520,7 +1592,18 @@ relayout();
 go(0);
 // Preview hook: index.html#demo5-bowl jumps to step 5 with a sample order
 if (location.hash.startsWith('#demo')) { const [hn, hb] = location.hash.slice(5).split('-'); const n = +hn || PAY; const picks = [[hb || 'burrito'], ['lime_rice'], ['black_beans'], ['bbq_chicken', 'crispy_mushroom'], ['tomato_onion', 'corn'], ['lettuce', 'cheese', 'guac', 'sour_cream', 'chipotle_mayo'], ['churros', 'brownies'], ['peach_tea']]; for (let i = 0; i < Math.min(n, PAY); i++) picks[i].forEach(id => sel[STEPS[i].id].push(id)); maxStep = n; rebuildTray(); syncPans(); go(n); }
-})();
+};
+{
+  const loader = document.getElementById('loader'), t0 = performance.now();
+  // let the loader paint first, then build the (heavy) scene
+  requestAnimationFrame(() => setTimeout(() => {
+    startApp();
+    const minShow = matchMedia('(prefers-reduced-motion: reduce)').matches ? 300 : 2300;
+    Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), new Promise(r => setTimeout(r, 3000))]).then(() => {
+      setTimeout(() => { loader.classList.add('out'); setTimeout(() => loader.remove(), 700); }, Math.max(0, minShow - (performance.now() - t0)));
+    });
+  }, 30));
+}
 </script>
 </body>
 </html>
