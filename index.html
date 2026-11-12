@@ -414,6 +414,7 @@ const ING = {
   burrito: { name: 'Burrito', short: 'Burrito', sub: 'Rolled in a warm flour tortilla', veg: 1, base: '#F0DCAE' },
   bowl:    { name: 'Burrito Bowl', short: 'Bowl', sub: 'Everything, no tortilla', veg: 1, base: '#E2C69C' },
   tacos:   { name: 'Tacos', short: 'Tacos', sub: 'Three soft-shell tacos', veg: 1, base: '#F0DCAE' },
+  nachos:  { name: 'Nachos', short: 'Nachos', sub: 'Crunchy corn chips, loaded up', veg: 1, base: '#E8B04A' },
   salad:   { name: 'Salad', short: 'Salad', sub: 'On a bed of crisp lettuce', veg: 1, base: '#BFDB8A' },
 
   lime_rice:  { name: 'Cilantro Lime Rice', short: 'Lime Rice', sub: 'White rice, lime & cilantro', veg: 1, base: '#E6DFCB', spread: 1, tool: 'spoon',
@@ -490,7 +491,7 @@ const ING = {
 };
 
 const STEPS = [
-  { id: 'base', label: 'Meal', title: 'What are we making today?', staff: 'Hi! What can I get you?', mode: 'single', required: 1, hint: 'Pick one to start', options: ['burrito', 'bowl', 'tacos', 'salad'] },
+  { id: 'base', label: 'Meal', title: 'What are we making today?', staff: 'Hi! What can I get you?', mode: 'single', required: 1, hint: 'Pick one to start', options: ['burrito', 'bowl', 'tacos', 'nachos', 'salad'] },
   { id: 'rice', label: 'Rice', title: 'Choose your rice', staff: 'Which rice would you like?', mode: 'single', hint: 'Pick one, or skip', options: ['lime_rice', 'brown_rice'] },
   { id: 'beans', label: 'Beans', title: 'Add some beans?', staff: 'Black or pinto beans?', mode: 'single', hint: 'Pick one, or skip', options: ['black_beans', 'pinto_beans'] },
   { id: 'protein', label: 'Filling', title: 'Pick your fillings', staff: 'Fillings? Mix and match!', mode: 'multi', max: 3, hint: 'Mix & match · up to three', options: ['crispy_mushroom', 'bbq_chicken', 'peri_chicken', 'chipotle_chicken', 'mexican_paneer', 'bbq_paneer', 'peri_potato'] },
@@ -522,7 +523,10 @@ const REG = { x0: x, w: 300, cx: x + 150 };
 const CX0 = ST[0].x0 - 60, CX1 = REG.x0 + REG.w + 30;
 const W = CX1 + 600;
 const focusX = i => (i < PAY ? ST[i].cx : REG.cx);
-const staffX = i => focusX(i) + (i === 3 ? -50 : 0);
+// one server takes the order down the line beside the tray; a cashier waits at the till
+const SERVER_MAX = REG.x0 - 56;
+const serverX = tx => Math.min(tx, SERVER_MAX);
+const staffX = i => (i < PAY ? serverX(focusX(i)) : REG.cx);
 const panPos = (si, oi) => { const st = ST[si]; return st.rows > 1 ? [st.x0 + (oi % st.cols) * (PW + PG), ROWY[Math.floor(oi / st.cols)]] : [st.x0 + oi * (PW + PG), PY]; };
 
 /* ================= Paper-cut primitives ================= */
@@ -610,6 +614,22 @@ function tortillaSpots(r, cx, cy, R, n) {
   for (let i = 0; i < n; i++) { const [x, y] = disc(r, cx, cy, R); s += P(cutCircle(r, x, y, 2 + r() * 2.6, 1.6 + r() * 1.8, .15), '#B98A4A', `opacity="${f(.35 + r() * .3)}"`); }
   return s;
 }
+// a heap of torn corn-chip triangles
+function nachoChips(r, cx, cy, R, n) {
+  let s = '';
+  for (let i = 0; i < n; i++) {
+    const [x, y] = disc(r, cx, cy, R), a = r() * Math.PI * 2, z = 9 + r() * 5, pts = [];
+    for (let k = 0; k < 3; k++) { const b = a + k * 2.09 + jit(r, .2); pts.push([x + Math.cos(b) * z, y + Math.sin(b) * z]); }
+    s += P(poly(pts), pick(r, ['#E8B04A', '#F0C460', '#DDA03C', '#EDBB55']), 'stroke="#B47A2A" stroke-width=".7" stroke-opacity=".6"');
+    if (r() < .5) s += `<circle cx="${f(x + jit(r, 3))}" cy="${f(y + jit(r, 3))}" r="1" fill="#A8742C" opacity=".5"/>`;
+  }
+  return s;
+}
+// the red-and-white paper boat nachos come in
+function nachoBoat(r, n = 34) {
+  return `<g filter="url(#ps)">${P(cutRect(r, -56, -48, 112, 96, 1, 40), 'var(--cb-red)')}</g>${P(cutRect(r, -49, -41, 98, 82, .8, 40), '#FFF6E7')}
+    ${marker('M-49 -20H49M-49 2H49M-49 24H49', 'var(--cb-red)', 2, .35)}<g filter="url(#ps)">${nachoChips(r, 0, 0, 36, n)}</g>`;
+}
 function baseArt(id) {
   const r = rng(hash('art' + id)), cx = PW / 2, cy = PH / 2;
   if (id === 'burrito') {
@@ -622,6 +642,7 @@ function baseArt(id) {
     for (const ox of [-26, 26]) for (let k = 0; k < 3; k++) s += P(cutCircle(r, cx + ox + k, cy + 6 - k * 3, 23), k === 2 ? '#F2DFB3' : '#E2C690');
     return s + tortillaSpots(r, cx - 24, cy - 1, 16, 4) + tortillaSpots(r, cx + 28, cy - 1, 16, 4);
   }
+  if (id === 'nachos') return `<g filter="url(#ps)">${nachoChips(r, cx, cy, 34, 30)}</g>`;
   if (id === 'bowl') {
     let s = '';
     for (let k = 0; k < 3; k++) s += P(cutCircle(r, cx + k * 2, cy + 6 - k * 4, 40), ['#C9A26E', '#D3AF7C', '#DCBE91'][k]);
@@ -661,10 +682,10 @@ const torso = (r, wTop, wBot, top, bot, col) => P(poly([[-wTop + jit(r, .8), top
 
 /* ---- Characters ---- */
 // Staff member facing you over the counter (front view)
-function staffFront(i, skin, hair) {
+function staffFront(i, skin, hair, id) {
   const r = rng(hash('staff' + i)), x = staffX(i);
   const scoop = [[0, 14], [.55, 14], [.65, -28], [.78, -28], [.88, 14], [1, 14]];
-  return `<g class="staff" data-i="${i}" transform="translate(${x} ${STAFF_Y})" filter="url(#ps)"><g class="hop"><g class="boil" style="animation-delay:${f(-i * .21)}s">
+  return `<g class="staff" id="${id}" transform="translate(${x} ${STAFF_Y})" filter="url(#ps)"><g class="hop"><g class="boil" style="animation-delay:${f(-i * .21)}s">
     ${arm(-24, -4, scoop, 32, 12, '#3D3939', '#9EC3E6', { dur: 7, delay: i * 1.3, tool: P(cutRect(r, -2, 30, 4, 18, .3, 30), '#C9CFD3') + P(cutCircle(r, 0, 50, 6, 4.5), '#D7DDE1') })}
     ${torso(r, 22, 30, -10, 40, '#3D3939')}
     ${torso(r, 13, 18, 4, 40, 'var(--cb-red)')}
@@ -956,10 +977,7 @@ function buildScene() {
   out.glow = s;
   s = A + bunting;
   /* staff + cooks */
-  const skins = ['#C68B63', '#8D5A3C', '#D9A07A', '#A86E4B', '#B97A55', '#7A4C33', '#B97A55', '#D9A07A', '#C68B63'];
-  const hairs = [0, '#2B1E18', 0, '#3B2A23', 0, '#241A16', '#5A3A28', '#2B1E18', 0];
-  let staffG = '';
-  for (let i = 0; i <= PAY; i++) staffG += staffFront(i, skins[i], hairs[i]);
+  let staffG = staffFront(PAY, '#C68B63', 0, 'cashier') + staffFront(0, '#8D5A3C', '#2B1E18', 'server');
   const spatula = P(cutRect(r, -6, 28, 12, 16, .4), '#C9CFD3') + P(cutRect(r, -2, 18, 4, 12, .3), '#2E2A2A');
   const knife = P(cutRect(r, -2.5, 28, 5, 22, .3), '#D7DDE1') + P(cutRect(r, -2.5, 18, 5, 11, .3), '#2E2A2A');
   staffG += backPerson({ x: KX + 118, y: STAFF_Y - 6, shirt: '#3D3939', hair: '#2B1E18', skin: '#A86E4B', arms: 'cook', cap: 'cook', tool: '', toolKeys: [[0, -168], [.6, -168], [.65, -156], [.72, -168], [.79, -158], [.86, -168], [1, -168]], toolDur: 1.6, noLegs: 1 });
@@ -1110,6 +1128,9 @@ function drawTrayBase(id) {
   } else if (id === 'tacos') {
     for (const ox of [-62, 0, 62]) s += `<g filter="url(#ps)">${P(cutCircle(r, ox, 0, 24, 46), '#F2DFB3')}</g>${tortillaSpots(r, ox, 0, 16, 4)}${marker(`M${ox} -40V40`, '#C9A56A', 1.6, .6)}`;
     tFill.setAttribute('clip-path', 'url(#clipTacos)');
+  } else if (id === 'nachos') {
+    s = nachoBoat(r);
+    tFill.setAttribute('clip-path', 'url(#clipBowl)');
   } else {
     const white = id === 'salad';
     s = `<g filter="url(#ps)">${P(cutCircle(r, 0, 0, 54), white ? '#FBF8F1' : '#D3AF7C')}</g>${P(cutCircle(r, 0, 0, 45), white ? '#EFEAE0' : '#C9A26E')}`;
@@ -1200,7 +1221,7 @@ function rebuildTray() {
 
 /* ================= Motion ================= */
 const stage = document.getElementById('stage'), panelEl = document.getElementById('panel');
-const tray = $('#tray'), me = $('#me'), bubble = $('#bubble'), bubbleInner = $('#bubbleInner');
+const tray = $('#tray'), me = $('#me'), server = $('#server'), cashier = $('#cashier'), bubble = $('#bubble'), bubbleInner = $('#bubbleInner');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let camX = focusX(0), trayX = focusX(0), panelH = 0, lastTf = '', scale = 1;
 function measurePanels() {
@@ -1231,8 +1252,10 @@ function layout() {
   if (tf !== lastTf) { lastTf = tf; cam.style.transform = tf; }
 }
 let mealY = BOARD_Y;   // BOARD_Y while it's being made, TRAY_Y once handed over
+let bob = 0;   // the server's step bounce while walking the tray along
 function placeTray(x) {
   shownTray = x;
+  server.setAttribute('transform', `translate(${f(serverX(x))} ${STAFF_Y - bob})`);
   tray.setAttribute('transform', `translate(${f(x)} ${f(mealY)})`);
   me.setAttribute('transform', `translate(${f(x)} ${ME_Y})`);
 }
@@ -1269,6 +1292,7 @@ function moveTo(x, onArrive) {
   const tick = () => {
     k++;
     const e = ease(k / N);
+    bob = k < N && k % 2 ? 4 : 0;
     shownCam = c0 + (x - c0) * e;
     placeTray(t0 + (x - t0) * e);
     layout();
@@ -1293,7 +1317,7 @@ function say(i) {
   const tail = { right: ` M2 -8L-12 2 2 6Z`, left: ` M${w - 2} -8L${w + 12} 2 ${w - 2} 6Z`, above: ` M${tx - 9} 19L${tx + 2} 34 ${tx + 9} 19Z` }[pos];
   bubbleInner.innerHTML = `<g filter="url(#psBig)">${P(cutRect(r, 0, -21, w, 42, 1.2, 50) + tail, '#FFFDF8')}</g><text x="${w / 2}" text-anchor="middle" y="7" font-family="Patrick Hand, cursive" font-size="21" fill="${INK}">${text}</text>`;
   requestAnimationFrame(() => bubbleInner.classList.add('pop'));
-  cam.querySelectorAll('.staff').forEach(el => el.classList.toggle('talk', +el.dataset.i === i));
+  server.classList.toggle('talk', i < PAY); cashier.classList.toggle('talk', i === PAY);
 }
 const STEEL = '#D7DDE1', STEEL2 = '#AEB6BB';
 function miniFood(ing, R) {
@@ -1309,6 +1333,7 @@ function toolArt(kind, id) {
     case 'place': {
       const rr = rng(hash('tb' + id));
       if (id === 'tacos') return [-62, 0, 62].map(ox => P(cutCircle(rr, ox, 0, 24, 46), '#F2DFB3') + tortillaSpots(rr, ox, 0, 16, 4)).join('');
+      if (id === 'nachos') return nachoBoat(rr, 20);
       if (id === 'burrito') return P(cutCircle(rr, 0, 0, 52), '#E8CF9A') + P(cutCircle(rr, 0, 0, 49), '#F2DFB3') + tortillaSpots(rr, 0, 0, 42, 14);
       return P(cutCircle(rr, 0, 0, 54), id === 'salad' ? '#FBF8F1' : '#D3AF7C') + P(cutCircle(rr, 0, 0, 45), id === 'salad' ? '#C6DF94' : '#C9A26E');
     }
@@ -1470,7 +1495,7 @@ function makeSwatch(id) {
   }
   if (ING[id].dessert) return `<svg class="sw" viewBox="-34 -34 68 68" aria-hidden="true"><circle r="33" fill="${ING[id].base}"/><g transform="scale(1.05)">${sideArt(id)}</g></svg>`;
   if (ING[id].drink) return `<svg class="sw" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="${ING[id].base}" opacity=".25"/><g transform="translate(50 88) scale(2.05)">${cupFront(id)}</g></svg>`;
-  const isBase = ['burrito', 'bowl', 'tacos', 'salad'].includes(id), r = rng(hash('sw' + id)), cid = 'sw-' + id;
+  const isBase = STEPS[0].options.includes(id), r = rng(hash('sw' + id)), cid = 'sw-' + id;
   const edge = cutCircle(r, 56, 50, 48);
   const tex = isBase ? panTex[id] : texture(ING[id], () => disc(r, 56, 50, 46), r, .4);
   return `<svg class="sw" viewBox="6 0 100 100" aria-hidden="true"><defs><clipPath id="${cid}"><path d="${edge}"/></clipPath></defs><path d="${edge}" fill="${isBase ? '#C3CBD0' : ING[id].base}"/><g clip-path="url(#${cid})">${tex}</g></svg>`;
@@ -1553,7 +1578,7 @@ function wrapUp() {
       <g filter="url(#ps)">${P(cutCircle(r, 0, 0, 16), 'var(--cb-red)')}${P(cutCircle(r, 0, 0, 7), 'var(--cb-yellow)')}</g></g>`;
   } else if (base === 'tacos') {
     for (const ox of [-62, 0, 62]) s += `<g filter="url(#ps)">${P(cutRect(r, ox - 26, 8, 52, 36, 1), '#FFF6E7')}${P(cutRect(r, ox - 26, 16, 52, 7, .5), 'var(--cb-red)')}</g>`;
-  } else {
+  } else if (base !== 'nachos') {
     s = `<g filter="url(#ps)">${P(cutCircle(r, 0, 0, 57), 'rgba(250,252,250,.45)')}</g>${marker('M-36 -32Q-14 -50 12 -46', '#fff', 5, .9)}${marker('M30 34Q40 22 44 8', '#fff', 3, .7)}`;
   }
   for (let i = 0; i < 6; i++) { const a = i * 60 * Math.PI / 180; s += `<g class="sparkle" style="animation-delay:.25s">${P(poly([[Math.cos(a) * 84, Math.sin(a) * 66], [Math.cos(a + .08) * 100, Math.sin(a + .08) * 80], [Math.cos(a - .08) * 100, Math.sin(a - .08) * 80]]), 'var(--cb-yellow)')}</g>`; }
