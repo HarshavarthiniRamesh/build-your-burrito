@@ -293,7 +293,7 @@
     background: rgba(28, 20, 14, 0); transition: background .3s steps(4); overflow-y: auto; }
   .finale.open { background: rgba(28, 20, 14, .55); }
   .finale[hidden] { display: none; }
-  .fin-card { position: relative; width: min(980px, 100%); display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr);
+  .fin-card { position: relative; width: min(1040px, 100%); display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
     background: var(--paper) var(--noise-soft); background-blend-mode: multiply; border-radius: 3px;
     box-shadow: 4px 7px 0 rgba(30, 20, 10, .3), 0 30px 60px -20px rgba(0, 0, 0, .6);
     transform: translateY(40px) rotate(-2.5deg) scale(.94); opacity: 0; transition: transform .36s steps(5, end), opacity .2s steps(3); }
@@ -303,16 +303,15 @@
     clip-path: polygon(3% 8%, 10% 0, 18% 10%, 27% 2%, 36% 9%, 46% 0, 56% 8%, 66% 1%, 76% 9%, 86% 2%, 94% 9%, 100% 4%, 98% 92%, 90% 100%, 80% 91%, 70% 99%, 60% 92%, 50% 100%, 40% 91%, 30% 99%, 20% 92%, 10% 100%, 1% 94%); }
   .fin-card::before { left: 40px; transform: rotate(-6deg); }
   .fin-card::after { right: 44px; transform: rotate(5deg); }
-  .fin-art { position: relative; background: var(--mat); border-radius: 3px 0 0 3px; display: grid; place-items: center; padding: 28px 18px 44px; overflow: hidden; }
+  .fin-art { position: relative; background: var(--mat); border-radius: 3px 0 0 3px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 64px 28px 28px; overflow: hidden; }
   .fin-art::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 39px, rgba(255, 255, 255, .07) 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, rgba(255, 255, 255, .07) 39px 40px); }
   .fin-art svg { overflow: visible; filter: drop-shadow(3px 6px 0 rgba(0, 0, 0, .25)); }
-  .fin-art .fa-v { position: absolute; top: 34px; bottom: 56px; left: 22px; width: calc(100% - 44px); height: calc(100% - 90px); }
-  .fin-art .fa-h { display: none; }
+  .fin-art .fa-h { position: relative; display: block; width: 100%; height: auto; }
   .fin-art .stamps { position: absolute; top: 18px; right: 16px; flex-direction: column; align-items: flex-end; gap: 6px; z-index: 1; }
   .fin-art .stamp { background: rgba(255, 248, 236, .92); opacity: 1; transform: rotate(8deg); }
   .finale.open .fin-art svg { animation: finDrop .5s steps(5, end) both .12s; }
   @keyframes finDrop { from { transform: translateY(-18px) rotate(-3deg) scale(.9); opacity: 0; } }
-  .fin-cap { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%) rotate(-1.5deg); font-family: var(--hand); font-size: 18px; color: var(--ink);
+  .fin-cap { position: relative; margin-top: -4px; transform: rotate(-1.5deg); font-family: var(--hand); font-size: 18px; color: var(--ink);
     background: var(--paper); padding: 2px 12px 0; box-shadow: 2px 2px 0 rgba(0, 0, 0, .2); white-space: nowrap; }
   .fin-rc { position: relative; padding: 26px 26px 20px; min-width: 0; display: flex; flex-direction: column; }
   .fin-rc h2 { font-size: 32px; text-wrap: balance; padding-right: 30px; }
@@ -326,6 +325,10 @@
   .fin-lines .fk { font-size: 18px; font-variant-numeric: tabular-nums; text-align: right; min-width: 3ch; }
   .fin-lines .fh { border: 0; padding: 0; }
   .fin-lines .fh .fk { font-size: 14px; color: var(--ink-soft); }
+  .fin-nut { position: relative; width: 100%; margin-top: 10px; padding: 12px 18px 12px; background: var(--paper) var(--noise-soft); background-blend-mode: multiply;
+    border-radius: 2px; transform: rotate(.6deg); box-shadow: 3px 4px 0 rgba(0, 0, 0, .22); }
+  .fin-nut.fn-narrow { display: none; }
+  .fin-nut .fin-total { margin-top: 0; padding-top: 0; border-top: 0; }
   .fin-total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; padding-top: 8px; border-top: 3px double rgba(59, 42, 35, .45); font-family: var(--hand); }
   .fin-total span { font-size: 22px; }
   .fin-total b { font-weight: 400; font-size: 34px; color: var(--cb-red); font-variant-numeric: tabular-nums; line-height: 1; }
@@ -343,9 +346,12 @@
   @media (max-width: 760px) {
     .finale { place-items: start center; padding: 18px 12px; }
     .fin-card { grid-template-columns: minmax(0, 1fr); }
-    .fin-art { border-radius: 3px 3px 0 0; padding: 22px 10px 40px; }
-    .fin-art .fa-v { display: none; }
-    .fin-art .fa-h { display: block; position: relative; width: 100%; height: auto; }
+    .fin-art { border-radius: 3px 3px 0 0; }
+    .fin-art { padding: 40px 12px 18px; gap: 10px; }
+    .fin-nut { padding: 10px 14px; }
+    .fin-nut.fn-wide { display: none; }
+    .fin-nut.fn-narrow { display: block; margin-top: 14px; transform: rotate(-.4deg); background-color: #FFFDF7; box-shadow: 2px 3px 0 rgba(0, 0, 0, .14); }
+    .fin-art { padding-bottom: 14px; }
     .fin-art .stamps { top: 10px; left: 10px; right: auto; align-items: flex-start; transform: scale(.7); transform-origin: top left; }
     .fin-x { background: var(--paper); box-shadow: 1px 2px 0 rgba(0, 0, 0, .2); }
     .fin-rc { padding: 18px 16px 16px; }
@@ -1716,8 +1722,7 @@ function finaleArt() {
   g.querySelectorAll('.fade-out').forEach(el => el.remove());
   const wrap = g.children[g.children.length - 2];   // tWrap: foil, lid and sparkles stay on the counter
   if (wrap) wrap.innerHTML = '';
-  // upright on the tall desktop column, flat across the top on phones
-  return `<svg class="fa-v" viewBox="-80 -178 160 356" aria-hidden="true"><g transform="rotate(90)">${g.outerHTML}</g></svg><svg class="fa-h" viewBox="-174 -76 348 152" aria-hidden="true">${g.outerHTML}</svg>`;
+  return `<svg class="fa-h" viewBox="-174 -76 348 152" aria-hidden="true">${g.outerHTML}</svg>`;
 }
 function finaleHTML() {
   const base = sel.base[0], what = base ? ING[base].name.toLowerCase() : 'meal';
@@ -1730,17 +1735,24 @@ function finaleHTML() {
   const mac = [['Protein', t[2]], ['Carbs', t[3]], ['Fat', t[1]]];
   const macMax = Math.max(1, ...mac.map(m => m[1]));
   const notCounted = missing.map(id => ING[id].short.toLowerCase());
+  // the nutrition label sits under the tray on wide screens, after the itemised list on phones
+  const nutBody = `<div class="fin-total"><span>Total</span><b>${fmtK(t[0])} <small>kcal</small></b></div>
+          <div class="fin-mac">${mac.map(([n, v]) => `<div><span>${n}</span><i style="--w:${(v / macMax * 100).toFixed(1)}%"></i><b>${Math.round(v)} g</b></div>`).join('')}</div>
+          <p class="fin-note">Regular portions, from the published nutrition info.${notCounted.length ? ` ${notCounted.join(', ').replace(/^./, c => c.toUpperCase())} ${notCounted.length > 1 ? "aren't" : "isn't"} listed, so ${notCounted.length > 1 ? "they're" : "it's"} not counted.` : ''}</p>`;
+  const nutHTML = `<div class="fin-nut fn-wide">${nutBody}</div>`;
   return `
     <div class="fin-card" role="document">
       <button class="fin-x" data-fin="close" aria-label="Close">×</button>
-      <div class="fin-art">${finaleArt()}<div class="stamps">${allVeg ? '<span class="stamp veg">100% VEG</span>' : ''}<span class="stamp">READY!</span></div><div class="fin-cap">What's inside</div></div>
+      <div class="fin-art">
+        <div class="stamps">${allVeg ? '<span class="stamp veg">100% VEG</span>' : ''}<span class="stamp">READY!</span></div>
+        ${finaleArt()}<div class="fin-cap">What's inside</div>
+        ${nutHTML}
+      </div>
       <div class="fin-rc">
         <div class="kicker">Order #${orderNo} · ready at the counter</div>
         <h2 id="fin-title">Your ${what}, made your way</h2>
         <ul class="fin-lines"><li class="fh"><span class="fl"></span><span class="fi"></span><span class="fk">kcal</span></li>${lines}</ul>
-        <div class="fin-total"><span>Total</span><b>${fmtK(t[0])} <small>kcal</small></b></div>
-        <div class="fin-mac">${mac.map(([n, v]) => `<div><span>${n}</span><i style="--w:${(v / macMax * 100).toFixed(1)}%"></i><b>${Math.round(v)} g</b></div>`).join('')}</div>
-        <p class="fin-note">Regular portions, from the published nutrition info.${notCounted.length ? ` ${notCounted.join(', ').replace(/^./, c => c.toUpperCase())} ${notCounted.length > 1 ? "aren't" : "isn't"} listed, so ${notCounted.length > 1 ? "they're" : "it's"} not counted.` : ''}</p>
+        <div class="fin-nut fn-narrow">${nutBody}</div>
         <div class="fin-foot"><button class="btn ghost" data-fin="back">← Change something</button><button class="btn primary" data-fin="again">Build another</button></div>
       </div>
     </div>`;
