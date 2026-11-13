@@ -245,10 +245,10 @@
   @keyframes shake { 33% { transform: translateX(-5px) rotate(-2deg); } 66% { transform: translateX(5px) rotate(2deg); } }
   .chips.dense { grid-template-columns: repeat(auto-fill, minmax(156px, 1fr)); gap: 8px; }
   .chips.dense .chip { padding: 5px 8px 5px 5px; gap: 8px; }
-  .chips.dense .chip svg.sw { width: 36px; height: 36px; }
+  .chips.dense .chip .sw { width: 36px; height: 36px; }
   .chips.dense .chip .nm { font-size: 17px; }
   .chips.dense .chip .sb { display: none; }
-  .chip svg.sw { width: 46px; height: 46px; flex-shrink: 0; filter: drop-shadow(1px 2px 0 rgba(59, 42, 35, .22)); }
+  .chip .sw { width: 46px; height: 46px; flex-shrink: 0; filter: drop-shadow(1px 2px 0 rgba(59, 42, 35, .22)); }
   /* name and description share one left edge; the veg mark hangs in its own column beside the first line */
   .chip .tx { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; }
   .chip .tx.hasvm { grid-template-columns: 12px minmax(0, 1fr); column-gap: 7px; }
@@ -381,7 +381,7 @@
     .chips { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .chip { padding: 6px 8px 6px 6px; gap: 8px; }
     .chip .sb { display: none; }
-    .chip svg.sw, .chips.dense .chip svg.sw { width: 46px; height: 46px; }
+    .chip .sw, .chips.dense .chip .sw { width: 46px; height: 46px; }
     .chip .nm, .chips.dense .chip .nm { font-size: 17px; }
     .chips.many { grid-auto-flow: column; grid-template-rows: repeat(2, auto); grid-template-columns: none; grid-auto-columns: calc(50% - 4px); overflow-x: auto; scroll-snap-type: x proximity; padding: 12px 8px 8px 4px; margin: -12px -8px -8px -4px; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 86%, transparent); mask-image: linear-gradient(90deg, #000 86%, transparent); }
     .chips.many::-webkit-scrollbar { display: none; }
@@ -419,7 +419,7 @@
     .hint, .summary { display: none; }
     .chips, .chips.dense { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .chip { padding: 5px 8px 5px 5px; gap: 8px; }
-    .chip svg.sw, .chips.dense .chip svg.sw { width: 32px; height: 32px; }
+    .chip .sw, .chips.dense .chip .sw { width: 32px; height: 32px; }
     .chip .nm, .chips.dense .chip .nm { font-size: 16px; }
     .chip .sb { display: none; }
     .pfoot { margin-top: 8px; padding-top: 8px; justify-content: space-between; }
@@ -435,6 +435,7 @@
   @media (max-width: 760px), (pointer: coarse) {
     .flicker, .blotch { display: none; }
     .grain { mix-blend-mode: normal; opacity: .14; }
+    .flag { animation: none; }   /* 144 fluttering flags cost more than they add on a small screen */
   }
   @media (prefers-reduced-motion: reduce) {
     .bub, .flame, .toss, .shake2, .boil, .eyes, .talk .mouth, .talk .smile, .talk .hop, .chewing .mouth, .sway, .flag, .steam path, .yum, .flicker, #me.walking .legA, #me.walking .legB { animation: none; }
@@ -945,6 +946,21 @@ function tankArt(id) {
   return s;
 }
 
+// the paper-shadow filters, shared by the scene and the baked pictures below
+const PAPER_FILTERS = `<filter id="ps" x="-15%" y="-15%" width="140%" height="140%"><feDropShadow dx="1.8" dy="2.6" stdDeviation="1.3" flood-color="#2A1408" flood-opacity=".32"/></filter>
+    <filter id="psBig" x="-10%" y="-10%" width="125%" height="130%"><feDropShadow dx="3" dy="4.5" stdDeviation="2.6" flood-color="#2A1408" flood-opacity=".28"/></filter>
+    <filter id="bs" x="-5%" y="-5%" width="115%" height="115%"><feDropShadow dx=".9" dy="1.3" stdDeviation=".5" flood-color="#2A1408" flood-opacity=".35"/></filter>`;
+// Bake a static piece of SVG into one picture. It stays vector (sharp at any zoom), but the browser
+// handles it as a single element instead of hundreds of grains, which keeps phones fast.
+const ROOT_CSS = getComputedStyle(document.documentElement);
+function svgURL(svg) {
+  svg = svg.replace(/var\((--[\w-]+)\)/g, (m, v) => ROOT_CSS.getPropertyValue(v).trim() || m)
+    .replace(/^<svg\b/, `<svg xmlns="http://www.w3.org/2000/svg"`).replace(/^(<svg[^>]*>)/, `$1<defs>${PAPER_FILTERS}</defs>`);
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+const panPic = (id, ph) => `<image href="${svgURL(`<svg viewBox="0 0 ${PW} ${ph}" width="${PW}" height="${ph}"><defs><clipPath id="c"><rect x="4" y="4" width="${PW - 8}" height="${ph - 8}"/></clipPath></defs><g clip-path="url(#c)" filter="url(#bs)">${panTex[id]}</g></svg>`)}" width="${PW}" height="${ph}"/>`;
+// bake a static textured patch of the scene (scene coordinates) into one picture
+const bakeBox = (markup, x, y, w, h) => `<image x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" href="${svgURL(`<svg viewBox="${f(x)} ${f(y)} ${f(w)} ${f(h)}" width="${f(w)}" height="${f(h)}">${markup}</svg>`)}"/>`;
 const panTex = {};
 for (const st of ST) for (const id of st.options) {
   const PH = st.ph;
@@ -968,9 +984,7 @@ function buildScene() {
       <rect width="12" height="128" fill="#CDA26C"/><rect width="5" height="128" fill="#BE9058"/><rect x="5" width="1.2" height="128" fill="#DDB680"/>
     </pattern>
     <radialGradient id="glowG"><stop offset="0" stop-color="#FFE7A8" stop-opacity=".9"/><stop offset=".55" stop-color="#FFE0A0" stop-opacity=".3"/><stop offset="1" stop-color="#FFE0A0" stop-opacity="0"/></radialGradient>
-    <filter id="ps" x="-15%" y="-15%" width="140%" height="140%"><feDropShadow dx="1.8" dy="2.6" stdDeviation="1.3" flood-color="#2A1408" flood-opacity=".32"/></filter>
-    <filter id="psBig" x="-10%" y="-10%" width="125%" height="130%"><feDropShadow dx="3" dy="4.5" stdDeviation="2.6" flood-color="#2A1408" flood-opacity=".28"/></filter>
-    <filter id="bs" x="-5%" y="-5%" width="115%" height="115%"><feDropShadow dx=".9" dy="1.3" stdDeviation=".5" flood-color="#2A1408" flood-opacity=".35"/></filter>
+    ${PAPER_FILTERS}
     <clipPath id="panClip${PH}"><rect x="4" y="4" width="${PW - 8}" height="${PH - 8}"/></clipPath>
     <clipPath id="panClip${PH2}"><rect x="4" y="4" width="${PW - 8}" height="${PH2 - 8}"/></clipPath>
     <clipPath id="clipRound"><circle r="47"/></clipPath>
@@ -982,13 +996,20 @@ function buildScene() {
   /* cutting mat + kraft floor sheet + hand-laid paper tiles */
   s += `<rect width="${W}" height="${H}" fill="url(#mat)"/>`;
   s += `<g filter="url(#psBig)">${P(cutRect(r, 14, 10, W - 28, H - 20, 3, 120), '#DDBE96')}</g>`;
-  let tiles = '';
+  // each tile's little tilt is baked into its corners, and all tiles of a colour share one path:
+  // a thousand separate shapes made every repaint slow on phones
+  const tileD = { '#EBD3AF': '', '#E6C7A0': '' };
+  const rotD = (d, a, cx, cy) => { const c = Math.cos(a * Math.PI / 180), sn = Math.sin(a * Math.PI / 180);
+    return d.replace(/(-?[\d.]+) (-?[\d.]+)/g, (m, x, y) => { x -= cx; y -= cy; return f(cx + x * c - y * sn) + ' ' + f(cy + x * sn + y * c); }); };
   for (let gx = 22, i = 0; gx < W - 90; gx += 84, i++) for (let gy = Y.wall + 8, j = 0; gy < H - 90; gy += 84, j++) {
     if ((i + j) % 2) continue;
-    tiles += P(cutRect(r, gx, gy, 78, 78, 1.6, 80), (i * 7 + j * 3) % 5 ? '#EBD3AF' : '#E6C7A0', `transform="rotate(${f(jit(r, 1.6))} ${gx + 39} ${gy + 39})"`);
+    const d = cutRect(r, gx, gy, 78, 78, 1.6, 80), col = (i * 7 + j * 3) % 5 ? '#EBD3AF' : '#E6C7A0';
+    tileD[col] += rotD(d, jit(r, 1.6), gx + 39, gy + 39);
   }
-  s += `<g>${tiles}</g>`;
-  for (let i = 0; i < 40; i++) { const [px, py] = [40 + r() * (W - 80), 560 + r() * (H - 620)]; s += P(cutCircle(r, px, py, 5, 5), pick(r, ['#E6C7A0', '#D2AE84']), 'opacity=".8"'); }
+  s += `<g>${Object.entries(tileD).map(([c, d]) => P(d, c)).join('')}</g>`;
+  const peb = { '#E6C7A0': '', '#D2AE84': '' };
+  for (let i = 0; i < 40; i++) { const [px, py] = [40 + r() * (W - 80), 560 + r() * (H - 620)]; const d = cutCircle(r, px, py, 5, 5); peb[pick(r, ['#E6C7A0', '#D2AE84'])] += d; }
+  s += Object.entries(peb).map(([c, d]) => P(d, c, 'opacity=".8"')).join('');
 
   /* back wall + bunting */
   s += `<g filter="url(#psBig)">${P(poly([[0, 0], [W, 0], ...Array.from({ length: Math.ceil(W / 40) + 1 }, (_, k) => [W - k * 40, Y.wall + jit(r, 3)])]), 'var(--cb-red)')}</g>`;
@@ -1015,10 +1036,10 @@ function buildScene() {
   s += `<g filter="url(#ps)">${P(cutRect(r, s0.cx + 130, bc - 30, 60, 60, 1), 'var(--cb-teal)', `transform="rotate(8 ${s0.cx + 160} ${bc})"`)}${marker(`M${s0.cx + 138} ${bc - 18}h44M${s0.cx + 138} ${bc}h44M${s0.cx + 138} ${bc + 18}h44`, '#fff', 1.5, .5)}</g>`;
   for (const [ox, id] of [[-62, 'lime_rice'], [62, 'brown_rice']]) {
     const rr = rng(hash('pot' + id)), cx = s1.cx + ox;
-    s += `<g filter="url(#ps)">${P(cutRect(r, cx - 52, bc - 6, 104, 12, .5), '#7D878D')}${P(cutCircle(r, cx, bc, 42), '#A4ADB2')}${P(cutCircle(r, cx, bc, 35), ING[id].base)}</g><g filter="url(#bs)">${texture(ING[id], () => disc(rr, cx, bc, 32), rr, .25)}</g>` + steam(cx, bc - 4, ox > 0 ? 1.5 : 0);
+    s += `<g filter="url(#ps)">${P(cutRect(r, cx - 52, bc - 6, 104, 12, .5), '#7D878D')}${P(cutCircle(r, cx, bc, 42), '#A4ADB2')}${P(cutCircle(r, cx, bc, 35), ING[id].base)}</g>${bakeBox(`<g filter="url(#bs)">${texture(ING[id], () => disc(rr, cx, bc, 32), rr, .25)}</g>`, cx - 60, bc - 60, 120, 120)}` + steam(cx, bc - 4, ox > 0 ? 1.5 : 0);
   }
   { const rr = rng(5), cx = s2.cx - 30;
-    s += `<g filter="url(#ps)">${P(cutCircle(r, cx, bc, 44), '#7D878D')}${P(cutCircle(r, cx, bc, 37), '#3A3135')}</g><g filter="url(#bs)">${texture(ING.black_beans, () => disc(rr, cx, bc, 33), rr, .45)}</g>`;
+    s += `<g filter="url(#ps)">${P(cutCircle(r, cx, bc, 44), '#7D878D')}${P(cutCircle(r, cx, bc, 37), '#3A3135')}</g>${bakeBox(`<g filter="url(#bs)">${texture(ING.black_beans, () => disc(rr, cx, bc, 33), rr, .45)}</g>`, cx - 60, bc - 60, 120, 120)}`;
     s += `<g filter="url(#ps)">${P(cutRect(r, cx + 10, bc - 4, 86, 8, .5), '#B7BFC4', `transform="rotate(-18 ${cx + 10} ${bc})"`)}${P(cutCircle(r, cx + 10, bc, 12), '#C9CFD3')}</g>`;
     s += `<g filter="url(#ps)">${lime(r, s2.cx + 74, bc - 18)}${lime(r, s2.cx + 98, bc + 12)}</g>` + steam(cx - 6, bc - 8, .8); }
   const KX = s3.cx - 320;
@@ -1039,7 +1060,7 @@ function buildScene() {
     const gx = fx0 + 256, gw = 190;
     s += `<g filter="url(#ps)">${P(cutRect(r, gx, bc - 44, gw, 88, 1.2), '#2F2A28')}${P(cutRect(r, gx + 8, bc - 36, gw - 16, 72, 1), '#48413D')}</g>`;
     for (let i = 0; i < 7; i++) s += marker(`M${gx + 14} ${bc - 30 + i * 10}H${gx + gw - 14}`, '#6B625C', 1.4, .55);
-    s += `<g filter="url(#bs)">${texture(ING.bbq_chicken, () => [gx + 22 + rr() * (gw - 44), bc - 26 + rr() * 52], rr, .45)}</g>`;
+    s += bakeBox(`<g filter="url(#bs)">${texture(ING.bbq_chicken, () => [gx + 22 + rr() * (gw - 44), bc - 26 + rr() * 52], rr, .45)}</g>`, gx - 10, bc - 60, gw + 20, 120);
     A += steam(gx + 60, bc - 4, 0) + steam(gx + 160, bc + 4, 1.4);
     // burner + saute pan with paneer that hops when tossed
     const px = gx + gw + 90;
@@ -1069,7 +1090,7 @@ function buildScene() {
     s += `<g filter="url(#ps)">${fruitSlice(r, 'lemon', cx + 300, bc - 12, 1.6)}${fruitSlice(r, 'lemon', cx + 330, bc + 14, 1.5)}${fruitSlice(r, 'peach', cx + 30, bc + 30, 1.6)}</g>`; }
   { const s6 = ST[6], rr = rng(66);
     s += `<g filter="url(#ps)">${P(cutRect(r, s6.cx - 170, bc - 40, 130, 80, 1.2), '#7D878D')}${P(cutRect(r, s6.cx - 162, bc - 32, 114, 64, 1), '#E8B44A')}</g>`;
-    s += `<g filter="url(#bs)">${texture(ING.churros, () => [s6.cx - 150 + rr() * 90, bc - 22 + rr() * 44], rr, .35)}</g>`; A += steam(s6.cx - 105, bc - 6, .4);
+    s += bakeBox(`<g filter="url(#bs)">${texture(ING.churros, () => [s6.cx - 150 + rr() * 90, bc - 22 + rr() * 44], rr, .35)}</g>`, s6.cx - 200, bc - 70, 180, 140); A += steam(s6.cx - 105, bc - 6, .4);
     s += `<g filter="url(#ps)">${P(cutRect(r, s6.cx + 10, bc - 36, 130, 72, 1.2), '#A4ADB2')}${P(cutRect(r, s6.cx + 16, bc - 30, 118, 60, 1), '#5A3524')}</g>`;
     s += marker(`M${s6.cx + 46} ${bc - 28}V${bc + 28}M${s6.cx + 76} ${bc - 28}V${bc + 28}M${s6.cx + 106} ${bc - 28}V${bc + 28}M${s6.cx + 18} ${bc}H${s6.cx + 132}`, '#2E1A10', 2.2, .9); }
   { let cups = '';
@@ -1118,7 +1139,7 @@ function buildScene() {
       const rr = rng(hash('pan' + id));
       g += `<g class="pan" data-id="${id}" transform="translate(${px} ${py})" role="button" aria-label="${ing.name}"><g class="lift">
         ${ing.drink ? panTex[id] : `<g filter="url(#ps)">${P(cutRect(rr, -5, -5, PW + 10, PH + 10, 1.2, 50), '#C3CBD0')}${P(cutRect(rr, 3, 3, PW - 6, PH - 6, 1, 50), isBase ? '#B6C0C5' : ing.base)}</g>
-        <g clip-path="url(#panClip${PH})" filter="url(#bs)">${panTex[id]}</g>`}
+        ${panPic(id, PH)}`}
       </g></g>`;
     });
     s += g + '</g>';
@@ -1597,7 +1618,7 @@ function flashHint(text) {
 }
 
 const swCache = {};
-function swatch(id) { return swCache[id] || (swCache[id] = makeSwatch(id)); }
+function swatch(id) { return swCache[id] || (swCache[id] = `<img class="sw" alt="" src="${svgURL(makeSwatch(id).replace(/ class="sw"| aria-hidden="true"/g, ''))}">`); }
 function makeSwatch(id) {
   if (id === 'chocodilla') {   // three toasted wedges fanned on a plate, chocolate showing at the cut edge
     const r = rng(7);
