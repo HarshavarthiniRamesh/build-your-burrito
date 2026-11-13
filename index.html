@@ -311,6 +311,15 @@
   .fin-art .stamp { background: rgba(255, 248, 236, .92); opacity: 1; transform: rotate(8deg); }
   .finale.open .fin-art svg { animation: finDrop .5s steps(5, end) both .12s; }
   @keyframes finDrop { from { transform: translateY(-18px) rotate(-3deg) scale(.9); opacity: 0; } }
+  .fin-art .fz { transform-box: fill-box; transform-origin: center; transition: transform .24s steps(3, end), opacity .2s steps(3), filter .2s steps(3); cursor: pointer; }
+  .fin-card.focus .fin-art .fz:not(.hot) { opacity: .3; filter: saturate(.4); }
+  .fin-card.focus .fin-art .fz.hot { transform: scale(1.18); }
+  .fin-card.focus .fin-art .fz.hot:not([data-grp="main"]) { transform: scale(1.55); }
+  .fin-lines li[data-grp] { cursor: default; transition: opacity .2s steps(3); outline: none; }
+  .fin-card.focus .fin-lines li[data-grp]:not(.hot) { opacity: .3; }
+  .fin-lines li[data-grp]:focus-visible { box-shadow: inset 3px 0 0 var(--cb-red); }
+  .fin-card.focus .fin-lines .fl { opacity: 1; }
+  .fin-nut.one .fin-total b { color: var(--cb-red-deep); }
   .fin-cap { position: relative; margin-top: -4px; transform: rotate(-1.5deg); font-family: var(--hand); font-size: 18px; color: var(--ink);
     background: var(--paper); padding: 2px 12px 0; box-shadow: 2px 2px 0 rgba(0, 0, 0, .2); white-space: nowrap; }
   .fin-rc { position: relative; padding: 26px 26px 20px; min-width: 0; display: flex; flex-direction: column; }
@@ -1300,6 +1309,7 @@ function renderSide(newId) {
   const put = (id, x, y, a, art) => {
     const g = document.createElementNS(NS, 'g');
     g.setAttribute('transform', `translate(${x} ${y}) rotate(${a})`);
+    g.dataset.id = id;
     g.innerHTML = `<g class="${id === newId ? 'pop' : ''}">${art}</g>`;
     tSide.appendChild(g);
   };
@@ -1713,53 +1723,96 @@ function reset() {
 /* ---- the order card: a bigger look at the meal + an itemised receipt, once it's handed over ---- */
 const finale = document.getElementById('finale');
 let finaleFrom = null;
+// which tray item a pick belongs to: the meal itself, or a dessert / the drink on the side
+const grpOf = (stepId, id) => stepId === 'dessert' || stepId === 'drink' ? id : 'main';
 function finaleArt() {
   // the meal as it sits on the tray, unwrapped so you can see what's inside
   const g = tray.cloneNode(true);
   g.removeAttribute('id'); g.removeAttribute('transform');
-  g.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
   g.querySelectorAll('.shrink').forEach(el => el.classList.remove('shrink'));
   g.querySelectorAll('.fade-out').forEach(el => el.remove());
-  const wrap = g.children[g.children.length - 2];   // tWrap: foil, lid and sparkles stay on the counter
-  if (wrap) wrap.innerHTML = '';
+  g.querySelector('#tWrap').innerHTML = '';   // foil, lid and sparkles stay on the counter
+  // each item gets its own focus group, so it can be lifted out on hover
+  const tb = g.querySelector('#tBase'), tf = g.querySelector('#tFill');
+  if (tb.childNodes.length) {
+    const main = document.createElementNS(NS, 'g');
+    main.setAttribute('class', 'fz'); main.dataset.grp = 'main';
+    main.innerHTML = `<circle r="${sel.base[0] === 'tacos' ? 0 : 58}" fill="transparent"/>${sel.base[0] === 'tacos' ? '<rect x="-90" y="-50" width="180" height="100" fill="transparent"/>' : ''}`;
+    tb.before(main); main.append(tb, tf);
+  }
+  g.querySelectorAll('#tSide > g').forEach(it => {
+    const z = document.createElementNS(NS, 'g');
+    z.setAttribute('class', 'fz'); z.dataset.grp = it.dataset.id;
+    it.before(z);
+    z.innerHTML = `<rect x="-34" y="-30" width="68" height="60" fill="transparent" transform="${it.getAttribute('transform')}"/>`;
+    z.append(it);
+  });
+  g.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
   return `<svg class="fa-h" viewBox="-174 -76 348 152" aria-hidden="true">${g.outerHTML}</svg>`;
+}
+// the nutrition label for a set of picks
+function nutBody(ids, title) {
+  const t = [0, 0, 0, 0], missing = [];
+  ids.forEach(id => { const n = nut(id); if (n) n.forEach((v, k) => t[k] += v); else missing.push(id); });
+  if (ids.length && missing.length === ids.length)
+    return `<div class="fin-total"><span>${title}</span><b>— <small>kcal</small></b></div><p class="fin-note">Not in the published nutrition info, so there's nothing to show yet.</p>`;
+  const mac = [['Protein', t[2]], ['Carbs', t[3]], ['Fat', t[1]]];
+  const macMax = Math.max(1, ...mac.map(m => m[1]));
+  const nc = missing.map(id => ING[id].short.toLowerCase());
+  return `<div class="fin-total"><span>${title}</span><b>${fmtK(t[0])} <small>kcal</small></b></div>
+    <div class="fin-mac">${mac.map(([n, v]) => `<div><span>${n}</span><i style="--w:${(v / macMax * 100).toFixed(1)}%"></i><b>${Math.round(v)} g</b></div>`).join('')}</div>
+    <p class="fin-note">Regular portions, from the published nutrition info.${nc.length ? ` ${nc.join(', ').replace(/^./, c => c.toUpperCase())} ${nc.length > 1 ? "aren't" : "isn't"} listed, so ${nc.length > 1 ? "they're" : "it's"} not counted.` : ''}</p>`;
+}
+const finalePicks = () => STEPS.slice(0, PAY).flatMap(s => sel[s.id].map(id => ({ step: s, id, grp: grpOf(s.id, id) })));
+function grpNut(grp) {
+  const picks = finalePicks();
+  if (!grp) return nutBody(picks.map(p => p.id), 'Total');
+  const ids = picks.filter(p => p.grp === grp).map(p => p.id);
+  return nutBody(ids, grp === 'main' ? ING[sel.base[0]].name : ING[grp].name);
 }
 function finaleHTML() {
   const base = sel.base[0], what = base ? ING[base].name.toLowerCase() : 'meal';
   const allVeg = STEPS.slice(1, PAY).every(s => sel[s.id].every(id => ING[id].veg !== 0));
-  const { t, missing } = totals();
   const lines = STEPS.slice(0, PAY).filter(s => sel[s.id].length).map(s => sel[s.id].map((id, k) => {
     const kc = kcalOf(id);
-    return `<li><span class="fl">${k ? '' : s.label}</span><span class="fi">${ING[id].name}</span><span class="fk">${kc === null ? '—' : kc}</span></li>`;
+    return `<li data-grp="${grpOf(s.id, id)}" tabindex="0"><span class="fl">${k ? '' : s.label}</span><span class="fi">${ING[id].name}</span><span class="fk">${kc === null ? '—' : kc}</span></li>`;
   }).join('')).join('');
-  const mac = [['Protein', t[2]], ['Carbs', t[3]], ['Fat', t[1]]];
-  const macMax = Math.max(1, ...mac.map(m => m[1]));
-  const notCounted = missing.map(id => ING[id].short.toLowerCase());
+  const hint = matchMedia('(hover: hover)').matches ? 'Hover an item to see its nutrition' : 'Tap an item to see its nutrition';
   // the nutrition label sits under the tray on wide screens, after the itemised list on phones
-  const nutBody = `<div class="fin-total"><span>Total</span><b>${fmtK(t[0])} <small>kcal</small></b></div>
-          <div class="fin-mac">${mac.map(([n, v]) => `<div><span>${n}</span><i style="--w:${(v / macMax * 100).toFixed(1)}%"></i><b>${Math.round(v)} g</b></div>`).join('')}</div>
-          <p class="fin-note">Regular portions, from the published nutrition info.${notCounted.length ? ` ${notCounted.join(', ').replace(/^./, c => c.toUpperCase())} ${notCounted.length > 1 ? "aren't" : "isn't"} listed, so ${notCounted.length > 1 ? "they're" : "it's"} not counted.` : ''}</p>`;
-  const nutHTML = `<div class="fin-nut fn-wide">${nutBody}</div>`;
   return `
     <div class="fin-card" role="document">
       <button class="fin-x" data-fin="close" aria-label="Close">×</button>
       <div class="fin-art">
         <div class="stamps">${allVeg ? '<span class="stamp veg">100% VEG</span>' : ''}<span class="stamp">READY!</span></div>
-        ${finaleArt()}<div class="fin-cap">What's inside</div>
-        ${nutHTML}
+        ${finaleArt()}<div class="fin-cap">${hint}</div>
+        <div class="fin-nut fn-wide" aria-live="polite">${grpNut(null)}</div>
       </div>
       <div class="fin-rc">
         <div class="kicker">Order #${orderNo} · ready at the counter</div>
         <h2 id="fin-title">Your ${what}, made your way</h2>
         <ul class="fin-lines"><li class="fh"><span class="fl"></span><span class="fi"></span><span class="fk">kcal</span></li>${lines}</ul>
-        <div class="fin-nut fn-narrow">${nutBody}</div>
+        <div class="fin-nut fn-narrow">${grpNut(null)}</div>
         <div class="fin-foot"><button class="btn ghost" data-fin="back">← Change something</button><button class="btn primary" data-fin="again">Build another</button></div>
       </div>
     </div>`;
 }
+// focus one tray item: lift it, fade the rest of the tray and the receipt, swap the label to just that item
+let finGrp = null;
+function focusGrp(grp) {
+  if (grp === finGrp) return;
+  finGrp = grp;
+  const card = finale.querySelector('.fin-card'); if (!card) return;
+  card.classList.toggle('focus', !!grp);
+  card.querySelectorAll('[data-grp]').forEach(el => el.classList.toggle('hot', el.dataset.grp === grp));
+  card.querySelectorAll('.fin-nut').forEach(el => { el.innerHTML = grpNut(grp); el.classList.toggle('one', !!grp); });
+}
+finale.addEventListener('pointerover', e => { if (e.pointerType === 'mouse') focusGrp(e.target.closest('[data-grp]')?.dataset.grp || null); });
+finale.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') focusGrp(null); });
+finale.addEventListener('focusin', e => focusGrp(e.target.closest('[data-grp]')?.dataset.grp || null));
 function openFinale() {
   if (step !== PAY || finale.classList.contains('open')) return;
   finaleFrom = document.activeElement;
+  finGrp = null;
   finale.innerHTML = finaleHTML();
   finale.hidden = false;
   void finale.offsetWidth;
@@ -1776,6 +1829,7 @@ function closeFinale(instant) {
 finale.addEventListener('click', e => {
   const act = e.target.closest('[data-fin]')?.dataset.fin;
   if (e.target === finale || act === 'close') return closeFinale();
+  if (!act && e.pointerType !== 'mouse') { const g = e.target.closest('[data-grp]')?.dataset.grp || null; focusGrp(g === finGrp ? null : g); }
   if (act === 'back') { closeFinale(true); go(PAY - 1); }
   if (act === 'again') { closeFinale(true); reset(); }
 });
