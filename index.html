@@ -313,9 +313,8 @@
   .fin-card.focus .fin-art .fz:not(.hot) { opacity: .3; }
   .fin-card.focus .fin-art .fz.hot { transform: scale(1.18); }
   .fin-card.focus .fin-art .fz.hot:not([data-grp="main"]) { transform: scale(1.55); }
-  .fin-lines li[data-grp] { cursor: default; transition: opacity .18s ease-out; outline: none; }
-  .fin-card.focus .fin-lines li[data-grp]:not(.hot) { opacity: .3; }
-  .fin-lines li[data-grp]:focus-visible { box-shadow: inset 3px 0 0 var(--cb-red); }
+  .fin-lines li[data-row] { transition: opacity .18s ease-out; }
+  .fin-card.focus .fin-lines li[data-row]:not(.hot) { opacity: .3; }
   .fin-card.focus .fin-lines .fl { opacity: 1; }
   .fin-nut.one .fin-total b { color: var(--cb-red-deep); }
   .fin-cap { position: relative; margin-top: -4px; transform: rotate(-1.5deg); font-family: var(--hand); font-size: 18px; color: var(--ink);
@@ -1775,7 +1774,7 @@ function finaleHTML() {
   const allVeg = STEPS.slice(1, PAY).every(s => sel[s.id].every(id => ING[id].veg !== 0));
   const lines = STEPS.slice(0, PAY).filter(s => sel[s.id].length).map(s => sel[s.id].map((id, k) => {
     const kc = kcalOf(id);
-    return `<li data-grp="${grpOf(s.id, id)}" tabindex="0"><span class="fl">${k ? '' : s.label}</span><span class="fi">${ING[id].name}</span><span class="fk">${kc === null ? '—' : kc}</span></li>`;
+    return `<li data-row="${grpOf(s.id, id)}"><span class="fl">${k ? '' : s.label}</span><span class="fi">${ING[id].name}</span><span class="fk">${kc === null ? '—' : kc}</span></li>`;
   }).join('')).join('');
   const hint = matchMedia('(hover: hover)').matches ? 'Hover an item to see its nutrition' : 'Tap an item to see its nutrition';
   // the nutrition label sits under the tray on wide screens, after the itemised list on phones
@@ -1803,7 +1802,7 @@ function focusGrp(grp) {
   finGrp = grp;
   const card = finale.querySelector('.fin-card'); if (!card) return;
   card.classList.toggle('focus', !!grp);
-  card.querySelectorAll('[data-grp]').forEach(el => el.classList.toggle('hot', el.dataset.grp === grp));
+  card.querySelectorAll('[data-grp], [data-row]').forEach(el => el.classList.toggle('hot', (el.dataset.grp || el.dataset.row) === grp));
   card.querySelectorAll('.fin-nut').forEach(el => { el.innerHTML = grpNut(grp); el.classList.toggle('one', !!grp); });
 }
 // moving from one item to the next crosses a gap: hold the current focus briefly so it doesn't flash off and on
