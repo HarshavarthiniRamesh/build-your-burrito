@@ -311,8 +311,8 @@
   .fin-art .stamp { background: rgba(255, 248, 236, .92); opacity: 1; transform: rotate(8deg); }
   .finale.open .fin-art svg { animation: finDrop .5s steps(5, end) both .12s; }
   @keyframes finDrop { from { transform: translateY(-18px) rotate(-3deg) scale(.9); opacity: 0; } }
-  .fin-art .fz { transform-box: fill-box; transform-origin: center; transition: transform .24s steps(3, end), opacity .2s steps(3), filter .2s steps(3); cursor: pointer; }
-  .fin-card.focus .fin-art .fz:not(.hot) { opacity: .3; filter: saturate(.4); }
+  .fin-art .fz { transform-box: fill-box; transform-origin: center; transition: transform .24s steps(3, end), opacity .2s steps(3); cursor: pointer; }
+  .fin-card.focus .fin-art .fz:not(.hot) { opacity: .3; }
   .fin-card.focus .fin-art .fz.hot { transform: scale(1.18); }
   .fin-card.focus .fin-art .fz.hot:not([data-grp="main"]) { transform: scale(1.55); }
   .fin-lines li[data-grp] { cursor: default; transition: opacity .2s steps(3); outline: none; }
@@ -350,6 +350,7 @@
   .fin-mac div:nth-child(2) i::after { background: #E89A5C; }
   .fin-mac div:nth-child(3) i::after { background: var(--cb-red); opacity: .75; }
   .fin-mac b { font-weight: 400; font-size: 16px; text-align: right; font-variant-numeric: tabular-nums; }
+  .fin-nut .fin-note { min-height: 2.8em; }
   .fin-note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); }
   .fin-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: auto; padding-top: 16px; }
   @media (max-width: 760px) {
@@ -1757,14 +1758,13 @@ function finaleArt() {
 function nutBody(ids, title) {
   const t = [0, 0, 0, 0], missing = [];
   ids.forEach(id => { const n = nut(id); if (n) n.forEach((v, k) => t[k] += v); else missing.push(id); });
-  if (ids.length && missing.length === ids.length)
-    return `<div class="fin-total"><span>${title}</span><b>— <small>kcal</small></b></div><p class="fin-note">Not in the published nutrition info, so there's nothing to show yet.</p>`;
+  const none = ids.length && missing.length === ids.length;
   const mac = [['Protein', t[2]], ['Carbs', t[3]], ['Fat', t[1]]];
   const macMax = Math.max(1, ...mac.map(m => m[1]));
   const nc = missing.map(id => ING[id].short.toLowerCase());
-  return `<div class="fin-total"><span>${title}</span><b>${fmtK(t[0])} <small>kcal</small></b></div>
-    <div class="fin-mac">${mac.map(([n, v]) => `<div><span>${n}</span><i style="--w:${(v / macMax * 100).toFixed(1)}%"></i><b>${Math.round(v)} g</b></div>`).join('')}</div>
-    <p class="fin-note">Regular portions, from the published nutrition info.${nc.length ? ` ${nc.join(', ').replace(/^./, c => c.toUpperCase())} ${nc.length > 1 ? "aren't" : "isn't"} listed, so ${nc.length > 1 ? "they're" : "it's"} not counted.` : ''}</p>`;
+  return `<div class="fin-total"><span>${title}</span><b>${none ? '—' : fmtK(t[0])} <small>kcal</small></b></div>
+    <div class="fin-mac">${mac.map(([n, v]) => `<div><span>${n}</span><i style="--w:${none ? 0 : (v / macMax * 100).toFixed(1)}%"></i><b>${none ? '—' : Math.round(v) + ' g'}</b></div>`).join('')}</div>
+    <p class="fin-note">${none ? "Not in the published nutrition info, so there's nothing to show for it." : `Regular portions, from the published nutrition info.${nc.length ? ` ${nc.join(', ').replace(/^./, c => c.toUpperCase())} ${nc.length > 1 ? "aren't" : "isn't"} listed, so ${nc.length > 1 ? "they're" : "it's"} not counted.` : ''}`}</p>`;
 }
 const finalePicks = () => STEPS.slice(0, PAY).flatMap(s => sel[s.id].map(id => ({ step: s, id, grp: grpOf(s.id, id) })));
 function grpNut(grp) {
@@ -1809,8 +1809,11 @@ function focusGrp(grp) {
   card.querySelectorAll('[data-grp]').forEach(el => el.classList.toggle('hot', el.dataset.grp === grp));
   card.querySelectorAll('.fin-nut').forEach(el => { el.innerHTML = grpNut(grp); el.classList.toggle('one', !!grp); });
 }
-finale.addEventListener('pointerover', e => { if (e.pointerType === 'mouse') focusGrp(e.target.closest('[data-grp]')?.dataset.grp || null); });
-finale.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') focusGrp(null); });
+// moving from one item to the next crosses a gap: hold the current focus briefly so it doesn't flash off and on
+let unfocusT = 0;
+const hoverGrp = grp => { clearTimeout(unfocusT); if (grp) focusGrp(grp); else unfocusT = setTimeout(() => focusGrp(null), 180); };
+finale.addEventListener('pointerover', e => { if (e.pointerType === 'mouse') hoverGrp(e.target.closest('[data-grp]')?.dataset.grp || null); });
+finale.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hoverGrp(null); });
 finale.addEventListener('focusin', e => focusGrp(e.target.closest('[data-grp]')?.dataset.grp || null));
 function openFinale() {
   if (step !== PAY || finale.classList.contains('open')) return;
