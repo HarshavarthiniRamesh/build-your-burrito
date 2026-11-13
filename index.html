@@ -714,9 +714,10 @@ function shape(L, x, y, r) {
   }
   return '';
 }
-function texture(ing, pt, r, factor = 1) {
+function texture(ing, pt, r, factor = 1, each = 1) {
   let s = '';
-  for (const L of ing.layers) { const n = Math.max(1, Math.round(L.n * factor)); for (let i = 0; i < n; i++) { const [x, y] = pt(); s += shape(L, x, y, r); } }
+  // each > 1 rounds counts up so every taco gets the same share
+  for (const L of ing.layers) { const n = Math.ceil(Math.max(1, Math.round(L.n * factor)) / each) * each; for (let i = 0; i < n; i++) { const [x, y] = pt(); s += shape(L, x, y, r); } }
   return s;
 }
 function tortillaSpots(r, cx, cy, R, n) {
@@ -1252,7 +1253,7 @@ function drawTrayBase(id) {
   tBase.appendChild(g);
 }
 function trayPoint(base, ing, slot, r) {
-  if (base === 'tacos') return () => { const t = [-62, 0, 62][Math.floor(r() * 3)]; return [t + gauss(r) * (ing.spread ? 14 : 9), (r() * 2 - 1) * 38]; };
+  if (base === 'tacos') { let k = Math.floor(r() * 3); return () => { const t = [-62, 0, 62][k++ % 3]; return [t + gauss(r) * (ing.spread ? 14 : 9), (r() * 2 - 1) * 38]; }; }
   if (base === 'burrito') {
     if (ing.spread) return () => [(r() * 2 - 1) * 44, (r() * 2 - 1) * 32];
     const sy = ((slot % 5) - 2) * 8;
@@ -1289,7 +1290,7 @@ function addFill(id, animate = true) {
     const pt = trayPoint(base, ing, slot, r);
     for (let i = 0; i < 6; i++) { const [x, y] = pt(); s += P(cutCircle(r, x, y, 7 + r() * 6, 6 + r() * 5, .12), ing.base); }
   }
-  s += texture(ing, trayPoint(base, ing, slot, r), r, factor);
+  s += texture(ing, trayPoint(base, ing, slot, r), r, factor, base === 'tacos' ? 3 : 1);
   const g = document.createElementNS(NS, 'g');
   g.innerHTML = s;
   if (animate) g.classList.add('pop');
@@ -1318,7 +1319,9 @@ function renderSide(newId) {
 }
 function sideArt(id) {
   const r = rng(hash('side' + id));
-  if (id === 'churros') return `<g filter="url(#ps)">${P(cutRect(r, -27, -15, 54, 30, 1), '#FFF6E7')}${P(cutRect(r, -27, -4, 54, 6, .5), 'var(--cb-red)')}</g><g filter="url(#bs)">${[-8, 0, 8].map(y => shape({ k: 'churro', c: ['#C98A44', '#B97935', '#D69A52'], a: 46, b: 8 }, 0, y, () => .5 + jit(r, .04))).join('')}</g>`;
+  if (id === 'churros') return `<g filter="url(#ps)">${P(cutRect(r, -27, -15, 54, 30, 1), '#FFF6E7')}${P(cutRect(r, -27, -4, 54, 6, .5), 'var(--cb-red)')}</g><g filter="url(#bs)">${[-8, 0, 8].map(y => shape({ k: 'churro', c: ['#C98A44', '#B97935', '#D69A52'], a: 46, b: 8 }, -4, y, () => .5 + jit(r, .04))).join('')}</g>`
+    // always with a little cup of chocolate dip
+    + `<g filter="url(#ps)">${P(cutCircle(r, 25, 11, 10.5), '#FFFDF8')}</g>${P(cutCircle(r, 25, 11, 8), '#4A2618')}${P(cutCircle(r, 23, 9, 3.2, 2, .1), '#7A4630', 'opacity=".8"')}${marker('M20 14q4 2 9 -1', '#2A140C', 1.2, .5)}`;
   if (id === 'brownies') return `<g filter="url(#ps)">${P(cutRect(r, -27, -21, 54, 42, 1), '#FBF3E2')}</g><g filter="url(#bs)">${P(cutRect(r, -22, -14, 22, 22, 1), '#5A3524')}${P(cutRect(r, 2, -8, 22, 22, 1), '#4E2D1E', 'transform="rotate(8 13 3)"')}</g>${marker('M-17 -6l6 2 5-3M7 2l6 1', '#E8C9A8', 1.2, .5)}`;
   return `<g filter="url(#ps)">${P(cutCircle(r, 0, 0, 28), '#FFFDF8')}</g><g filter="url(#bs)">${shape({ k: 'wedge', c: ['#EACB8E'], a: 25 }, -2, 2, () => .02)}${shape({ k: 'wedge', c: ['#E2BD7C'], a: 25 }, -2, -4, () => .55)}</g>`;
 }
