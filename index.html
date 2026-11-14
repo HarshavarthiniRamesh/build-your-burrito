@@ -178,6 +178,8 @@
   @keyframes bub { 0% { opacity: 0; } 25% { opacity: .9; } 55% { opacity: .5; } 80% { opacity: 0; } }
   .flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flame .5s steps(1) infinite; }
   @keyframes flame { 0% { transform: none; opacity: 1; } 50% { transform: scale(.8, .7); opacity: .7; } }
+  .jerk { animation: jerk 2.4s steps(1) infinite; }
+  @keyframes jerk { 0%, 70% { transform: none; } 74% { transform: translate(2px, 3px); } 79% { transform: translate(-2px, -4px); } 86% { transform: none; } }
   .toss { transform-box: fill-box; transform-origin: center; animation: toss 2.4s steps(1) infinite; }
   @keyframes toss { 0%, 70% { transform: none; } 74% { transform: translate(-4px, -10px); } 79% { transform: translate(-6px, -20px) rotate(6deg); } 85% { transform: translate(-3px, -9px) rotate(2deg); } 90% { transform: none; } }
   .shake2 { animation: shake2 1.6s steps(1) infinite; }
@@ -438,7 +440,7 @@
     .flag { animation: none; }   /* 144 fluttering flags cost more than they add on a small screen */
   }
   @media (prefers-reduced-motion: reduce) {
-    .bub, .flame, .toss, .shake2, .boil, .eyes, .talk .mouth, .talk .smile, .talk .hop, .chewing .mouth, .sway, .flag, .steam path, .yum, .flicker, #me.walking .legA, #me.walking .legB { animation: none; }
+    .bub, .flame, .toss, .jerk, .shake2, .boil, .eyes, .talk .mouth, .talk .smile, .talk .hop, .chewing .mouth, .sway, .flag, .steam path, .yum, .flicker, #me.walking .legA, #me.walking .legB { animation: none; }
     .pop, .wrap-in, #bubbleInner.pop { animation-duration: .01s; }
   }
 </style>
@@ -1067,7 +1069,8 @@ function buildScene() {
     const px = gx + gw + 90;
     s += `<g filter="url(#ps)">${P(cutRect(r, px - 64, bc - 46, 128, 92, 1.2), '#3F3B39')}${P(cutCircle(r, px, bc, 40), '#26221F')}</g>`;
     for (let i = 0; i < 10; i++) { const an = i / 10 * Math.PI * 2, fx = px + Math.cos(an) * 40, fy = bc + Math.sin(an) * 40; A += `<g class="flame" style="animation-delay:${f(-i * .13)}s">${P(poly([[fx - 4, fy + 2], [fx + Math.cos(an) * 9, fy + Math.sin(an) * 9], [fx + 4, fy - 2]]), i % 2 ? '#F5B83D' : '#E8642E')}</g>`; }
-    s += `<g filter="url(#ps)">${P(cutRect(r, px + 30, bc - 6, 72, 12, .5), '#2E2A2A')}${P(cutCircle(r, px, bc, 36), '#4C4845')}${P(cutCircle(r, px, bc, 30), '#5E5955')}</g>`;
+    // the handle angles out over the counter's edge, where the cook holds it and jerks the pan to toss
+    A += `<g class="jerk"><g filter="url(#ps)">${P(poly([[px + 26, bc - 2], [px + 34, bc + 6], [px + 82, bc + 49], [px + 74, bc + 57]]), '#2E2A2A')}${P(cutCircle(r, px, bc, 36), '#4C4845')}${P(cutCircle(r, px, bc, 30), '#5E5955')}</g></g>`;
     A += `<g class="toss"><g filter="url(#bs)">${texture(ING.mexican_paneer, () => disc(rr, px - 8, bc - 4, 16), rr, .3)}${texture(ING.bbq_paneer, () => disc(rr, px + 10, bc + 6, 13), rr, .22)}</g></g>`;
     A += steam(px - 4, bc - 10, 2.2);
   }
@@ -1108,10 +1111,11 @@ function buildScene() {
   s = A + bunting;
   /* staff + cooks */
   let staffG = staffFront(PAY, '#C68B63', 0, 'cashier') + staffFront(0, '#8D5A3C', '#2B1E18', 'server');
-  const spatula = P(cutRect(r, -6, 28, 12, 16, .4), '#C9CFD3') + P(cutRect(r, -2, 18, 4, 12, .3), '#2E2A2A');
   const knife = P(cutRect(r, -2.5, 28, 5, 22, .3), '#D7DDE1') + P(cutRect(r, -2.5, 18, 5, 11, .3), '#2E2A2A');
+  const PANX = KX + 256 + 190 + 90;   // the saute pan (see the back counter above)
   staffG += backPerson({ x: KX + 118, y: STAFF_Y - 6, shirt: '#3D3939', hair: '#2B1E18', skin: '#A86E4B', arms: 'cook', cap: 'cook', tool: '', toolKeys: [[0, -168], [.6, -168], [.65, -156], [.72, -168], [.79, -158], [.86, -168], [1, -168]], toolDur: 1.6, noLegs: 1 });
-  staffG += backPerson({ x: KX + 648, y: STAFF_Y - 6, shirt: '#3D3939', hair: '#3B2A23', skin: '#C68B63', arms: 'cook', cap: 'cook', tool: spatula, toolKeys: [[0, -150], [.68, -150], [.75, -128], [.84, -142], [.9, -150], [1, -150]], toolDur: 2.4, noLegs: 1 });
+  // the saute cook has hold of the pan handle, and their arm jerks with each toss
+  staffG += backPerson({ x: PANX + 58, y: STAFF_Y - 6, shirt: '#3D3939', hair: '#3B2A23', skin: '#C68B63', arms: 'cook', cap: 'cook', tool: '', toolKeys: [[0, 180], [.7, 180], [.74, 172], [.79, 190], [.86, 176], [.9, 180], [1, 180]], toolDur: 2.4, noLegs: 1 });
   staffG += backPerson({ x: s4.cx - 112, y: STAFF_Y - 6, shirt: '#3D3939', hair: '#5A3A28', skin: '#D9A07A', arms: 'cook', cap: 'cook', tool: knife, toolKeys: [[0, -150], [.1, -136], [.2, -150], [.3, -136], [.4, -150], [.5, -136], [.6, -150], [1, -150]], toolDur: 2.4, delay: 1, noLegs: 1 });
   s += `<g id="staffs">${staffG}</g>`;
   out.mid = s;
