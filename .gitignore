@@ -1,3 +1,4 @@
 .harness.html
 .mobile.html
 .DS_Store
+node_modules/
