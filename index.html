@@ -1221,7 +1221,7 @@ function buildScene() {
     { d: `M${CLEAR} L${CLEAR[0]} ${L1} L${GAP[0]} ${L1} L${GAP}`, start: 53, len: 6.5, o: { ...staff, carry: 1 }, fadeOut: 1 },
   ];
   // when the guest is at the table, and when their tray is
-  SEATED.span = [12, 34]; SEATED.food = [12, 52.5];
+  SEATED.span = [12, 34]; SEATED.food = [12, 52.5]; SEATED.x = SEAT[0];
   const CYCLE = 92;
   s += `<g id="wkHome"></g>`;
   wdefs.forEach((w, k) => {
@@ -1545,18 +1545,20 @@ function tickWalkers() {
   if (stage.classList.contains('moving') || stage.classList.contains('behind')) return;
   const now = performance.now() / 1000;
   const vx0 = -parseFloat(cam.style.transform.slice(10) || 0) / scale - 80, vx1 = vx0 + stage.clientWidth / scale + 160;
+  // any change in the scene costs a repaint, which phones feel: off-screen changes wait until they're in view
+  const seen = x => x >= vx0 && x <= vx1;
+  const show = (el, on) => { if (el.on !== on) { el.on = on; el.style.display = on ? '' : 'none'; } };
   const T = (now + 20) % WALKERS[0].cycle;   // a page opens with the guest already eating
   const within = ([a, b]) => T >= a && T < b;
-  SEATED.d.style.display = within(SEATED.span) ? '' : 'none';
-  SEATED.f.style.display = within(SEATED.food) ? '' : 'none';
+  if (seen(SEATED.x)) { show(SEATED.d, within(SEATED.span)); show(SEATED.f, within(SEATED.food)); }
   for (const w of WALKERS) {
     const t = T - w.start;
-    const shown = t >= 0 && t < w.len;
-    w.el.style.display = shown ? '' : 'none';
-    if (!shown) continue;
+    if (!(t >= 0 && t < w.len)) { if (w.el.on && seen(w.x)) show(w.el, false); continue; }
     const p = (t / w.len) * w.len0;
     const a = w.path.getPointAtLength(p), b = w.path.getPointAtLength(Math.min(w.len0, p + 3));
-    if (a.x < vx0 || a.x > vx1) continue;
+    if (!seen(a.x)) { if (w.el.on && seen(w.x)) show(w.el, false); continue; }
+    show(w.el, true);
+    w.x = a.x;
     if (Math.abs(b.x - a.x) > .2) w.dir = b.x < a.x ? -1 : 1;   // keep facing the same way on vertical stretches
     w.el.setAttribute('transform', `translate(${f(a.x)} ${f(a.y)})`);
     w.flip.setAttribute('transform', `scale(${w.dir || 1} 1)`);
