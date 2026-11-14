@@ -885,7 +885,7 @@ function avocado(r, x, y, rot) { return `<g transform="translate(${x} ${y}) rota
 function steam(x, y, k = 0) {
   return `<g class="steam" transform="translate(${x} ${y})">${[0, 1, 2].map(i => `<path d="M${i * 12 - 12} 0q-7 -9 0 -18t0 -18" style="animation-delay:${f(-(i * 1 + k))}s"/>`).join('')}</g>`;
 }
-function table(x, y, foodIds, diners = []) {
+function table(x, y, foodIds, diners = [], seatId = '') {
   const r = rng(hash('t' + x + y));
   const cols = ['var(--cb-yellow)', 'var(--cb-teal)', 'var(--cb-red)', '#F2E6D4'];
   let chairs = '';
@@ -899,7 +899,8 @@ function table(x, y, foodIds, diners = []) {
       ? `<g transform="translate(${f(fx)} ${f(fy)}) rotate(${f(jit(r, 25))})">${P(cutRect(r, -22, -9, 44, 18, .8, 30), '#C9CED2')}${marker('M-14 -7l3 6-2 6M-2 -8l2 7-2 6M10 -7l-2 6 3 6', '#fff', 1.3, .8)}${P(cutCircle(r, 0, 0, 5), 'var(--cb-red)')}</g>`
       : `<g transform="translate(${f(fx)} ${f(fy)})">${P(cutCircle(r, 0, 0, 17), '#D3AF7C')}${P(cutCircle(r, 0, 0, 13), '#F1ECDD')}${P(cutCircle(r, -4, -3, 5), '#B98451')}${P(cutCircle(r, 5, 2, 4), '#97BA50')}${P(cutCircle(r, -1, 6, 3.5), '#E2513F')}</g>`;
   });
-  return `<g transform="translate(${x} ${y})"><g filter="url(#ps)">${chairs}</g>${dn}<g filter="url(#psBig)">${P(cutCircle(r, 0, 0, 47), '#D9A86C')}</g>${marker('M-30 -12Q0 -24 30 -10M-34 8Q0 -2 34 10M-24 26Q0 18 26 28', '#A9773F', 1.4, .45)}<g filter="url(#ps)">${food}${P(cutCircle(r, 26, 22, 8), '#FFF8EC')}${P(cutCircle(r, 26, 22, 5.5), 'var(--cb-red)')}</g></g>`;
+  const id = k => seatId ? ` id="${seatId}${k}"` : '';
+  return `<g class="tbl" data-y="${y}" transform="translate(${x} ${y})"><g filter="url(#ps)">${chairs}</g><g${id('D')}>${dn}</g><g filter="url(#psBig)">${P(cutCircle(r, 0, 0, 47), '#D9A86C')}</g>${marker('M-30 -12Q0 -24 30 -10M-34 8Q0 -2 34 10M-24 26Q0 18 26 28', '#A9773F', 1.4, .45)}<g filter="url(#ps)"><g${id('F')}>${food}</g>${P(cutCircle(r, 26, 22, 8), '#FFF8EC')}${P(cutCircle(r, 26, 22, 5.5), 'var(--cb-red)')}</g></g>`;
 }
 
 /* ================= Scene build ================= */
@@ -970,7 +971,7 @@ for (const st of ST) for (const id of st.options) {
   panTex[id] = st.id === 'base' ? baseArt(id) : ing.drink ? tankArt(id) : texture(ing, pt, r, PH / 100);
 }
 
-const WALKERS = [];
+const WALKERS = [], SEATED = {};
 function buildScene() {
   const r = SR;
   let A = '';  // animated bits found among static props go to the "mid" sheet
@@ -1199,24 +1200,30 @@ function buildScene() {
   s += table(dx + 130, 150, ['foil', 'bowl'], [[-28, '#F5B83D', '#2B1E18', '#C48A62', 0], [28, '#C7B8E8', '#5A3A28', '#8D5A3C', 1]]);
   s += table(dx + 420, 150, ['bowl'], [[0, '#E3A7A0', '#241A16', '#D9A07A', 2]]);
   s += table(dx + 130, 450, ['bowl', 'foil'], [[-28, '#8FB98A', '#4A2E20', '#A86E4B', 3], [28, '#6E7FB5', '#7A4C33', '#C68B63', 4]]);
-  s += table(dx + 420, 450, ['foil'], [[0, '#D8463B', '#3B2A23', '#7A4C33', 5]]);
+  // this table's diner comes and goes (see the walkers below)
+  s += table(dx + 420, 450, ['foil'], [[0, '#D8463B', '#3B2A23', '#7A4C33', 5]], 'seat');
   s += table(dx + 130, 750, ['bowl', 'bowl'], [[-28, '#7FA9C9', '#5A3A28', '#C48A62', 6], [28, '#F5B83D', '#241A16', '#B97A55', 7]]);
   s += table(dx + 420, 750, ['foil'], [[0, '#8FB98A', '#2B1E18', '#D9A07A', 8]]);
   s += plant(W - 50, 1000, 1.1) + plant(dx + 60, 1080, .8) + plant(W - 60, 1300);
 
   /* walkers (paths sampled by JS at ~8fps) */
-  // walkers share one timeline so they're never in the dining aisles at the same time;
-  // routes only use the aisle (x = dx+275) and the lanes between table rows (y = 320, 620)
+  // One small story on a loop, so everyone who walks is going somewhere: a customer takes their tray
+  // from the till to the free seat and eats; later they get up and leave by the front door, and a server
+  // comes out from behind the counter to clear their tray. Routes keep to the aisle (x = dx+275) and
+  // the lanes between table rows (y = 320, 620); walkers are depth-sorted against the tables as they go.
   const AX = dx + 275, L1 = 320, L2 = 620;
+  const SEAT = [dx + 420, 412], TILL = [REG.x0 + REG.w + 12, ME_Y], GAP = [CX1 + 16, 250], CLEAR = [dx + 374, 362];
+  const guest = { shirt: '#D8463B', hair: '#3B2A23', skin: '#7A4C33', legs: '#3F4E6E' }, staff = { shirt: '#3D3939', hair: '#2B1E18', legs: '#2E2A2A', cap: 'var(--cb-red)' };
   const wdefs = [
-    // a customer carries their tray to the free chair at the right-hand middle table
-    { d: `M${dx - 20} ${L2} L${AX} ${L2} L${AX} ${L1} L${dx + 376} ${L1} L${dx + 376} 372`, start: 0, len: 11, o: { shirt: '#C7B8E8', hair: '#3B2A23', legs: '#4A5A7A', carry: 1 } },
-    // someone finishes and heads out through the front door
-    { d: `M${AX} ${L1} L${AX} ${L2} L${dx - 20} ${L2} L${dx - 60} 950 L205 950`, start: 13, len: 55, o: { shirt: '#E3A7A0', hair: '#241A16', legs: '#2F3B52' } },
-    // a server does a lap of the left-hand tables
-    { d: `M${AX} ${L1} L${AX} ${L2} L${dx + 30} ${L2} L${dx + 30} ${L1} Z`, start: 27, len: 15, o: { shirt: '#3D3939', hair: '#2B1E18', legs: '#2E2A2A', carry: 1, cap: 'var(--cb-red)' } },
+    { d: `M${TILL} L${TILL[0]} ${L2} L${AX} ${L2} L${AX} ${L1} L${SEAT[0]} ${L1} L${SEAT}`, start: 0, len: 12, o: { ...guest, carry: 1 }, fadeIn: 1 },
+    { d: `M${SEAT} L${SEAT[0]} ${L1} L${AX} ${L1} L${AX} ${L2} L${dx - 20} ${L2} L${dx - 60} 950 L150 950 L150 800`, start: 34, len: 56, o: guest, fadeOut: 1 },
+    { d: `M${GAP} L${GAP[0]} ${L1} L${CLEAR[0]} ${L1} L${CLEAR}`, start: 46, len: 6.5, o: staff, fadeIn: 1 },
+    { d: `M${CLEAR} L${CLEAR[0]} ${L1} L${GAP[0]} ${L1} L${GAP}`, start: 53, len: 6.5, o: { ...staff, carry: 1 }, fadeOut: 1 },
   ];
-  const CYCLE = 72;
+  // when the guest is at the table, and when their tray is
+  SEATED.span = [12, 34]; SEATED.food = [12, 52.5];
+  const CYCLE = 92;
+  s += `<g id="wkHome"></g>`;
   wdefs.forEach((w, k) => {
     s += `<path id="wp${k}" d="${w.d}" fill="none" stroke="none"/>`;
     s += `<g class="wk" id="wk${k}" style="display:none"><g class="wflip">${sidePerson(w.o)}</g></g>`;
@@ -1236,6 +1243,7 @@ function buildScene() {
   s += `<g id="bubble"><g id="bubbleInner"></g></g>`;
   out.top = s;
   LAYERS.forEach((el, k) => (el.innerHTML = Object.values(out)[k]));
+  SEATED.d = document.getElementById('seatD'); SEATED.f = document.getElementById('seatF');
   WALKERS.forEach((w, k) => { w.path = document.getElementById('wp' + k); w.len0 = w.path.getTotalLength(); w.el = document.getElementById('wk' + k); w.flip = w.el.firstElementChild; w.n = 0; });
 }
 buildScene();
@@ -1537,8 +1545,12 @@ function tickWalkers() {
   if (stage.classList.contains('moving') || stage.classList.contains('behind')) return;
   const now = performance.now() / 1000;
   const vx0 = -parseFloat(cam.style.transform.slice(10) || 0) / scale - 80, vx1 = vx0 + stage.clientWidth / scale + 160;
+  const T = (now + 20) % WALKERS[0].cycle;   // a page opens with the guest already eating
+  const within = ([a, b]) => T >= a && T < b;
+  SEATED.d.style.display = within(SEATED.span) ? '' : 'none';
+  SEATED.f.style.display = within(SEATED.food) ? '' : 'none';
   for (const w of WALKERS) {
-    const t = (now + 4) % w.cycle - w.start;
+    const t = T - w.start;
     const shown = t >= 0 && t < w.len;
     w.el.style.display = shown ? '' : 'none';
     if (!shown) continue;
@@ -1548,9 +1560,15 @@ function tickWalkers() {
     if (Math.abs(b.x - a.x) > .2) w.dir = b.x < a.x ? -1 : 1;   // keep facing the same way on vertical stretches
     w.el.setAttribute('transform', `translate(${f(a.x)} ${f(a.y)})`);
     w.flip.setAttribute('transform', `scale(${w.dir || 1} 1)`);
+    // step in and out of view (at the till, the counter, the front door) rather than popping
+    w.el.style.opacity = Math.min(1, w.fadeIn ? t / .6 : 1, w.fadeOut ? (w.len - t) / .6 : 1).toFixed(2);
+    // behind any table whose row is further forward, in front of the rest
+    const deeper = TABLES.find(tb => tb.y > a.y + 1)?.el || HOME;
+    if (w.slot !== deeper) { w.slot = deeper; deeper.before(w.el); }
     if (++w.n % 2 === 0) w.el.classList.toggle('alt');
   }
 }
+const TABLES = [...cam.querySelectorAll('.tbl')].map(el => ({ el, y: +el.dataset.y })).sort((a, b) => a.y - b.y), HOME = document.getElementById('wkHome');
 if (reduced) { LAYERS.forEach(l => l.pauseAnimations()); tickWalkers(); } else setInterval(tickWalkers, 125);
 
 /* ================= State & UI ================= */
