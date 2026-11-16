@@ -635,6 +635,8 @@ const W = CX1 + 600;
 const focusX = i => (i < PAY ? ST[i].cx : REG.cx);
 // one server takes the order down the line beside the tray; a cashier waits at the till
 const SERVER_MAX = REG.x0 - 56;
+// the kitchen door, at the end of the back counter; x is its middle, y where a walker stands inside it
+const DOOR = { x: CX1 - 52, y: 104 };
 const serverX = tx => Math.min(tx, SERVER_MAX);
 const staffX = i => (i < PAY ? serverX(focusX(i)) : REG.cx);
 const panPos = (si, oi) => { const st = ST[si]; return st.rows > 1 ? [st.x0 + (oi % st.cols) * (PW + PG), ROWY[Math.floor(oi / st.cols)]] : [st.x0 + oi * (PW + PG), PY]; };
@@ -1029,6 +1031,9 @@ function buildScene() {
   for (let i = CX0 + 20; i < CX1; i += 46) s += marker(`M${i} ${Y.back + 14}l10 0M${i + 23} ${Y.back + 40}l10 0`, '#7A8F98', 2, .6);
   s += `<g filter="url(#psBig)">${P(cutRect(r, CX0 - 6, Y.wall + 2, CX1 - CX0 + 12, Y.back - Y.wall, 1.5, 120), '#D3D9DC')}</g>`;
   for (let i = CX0 + 30; i < CX1; i += 160) s += marker(`M${i} ${Y.wall + 20}l60 0`, '#fff', 2.5, .7);
+  // the kitchen door at the end of the counter, where the server goes in and out (its swinging flap is in the top layer)
+  s += `<g filter="url(#psBig)">${P(cutRect(r, DOOR.x - 54, -20, 112, Y.back + 32, 1.2, 60), '#8E979D')}</g>`;
+  s += `<g filter="url(#ps)">${P(cutRect(r, DOOR.x - 46, -20, 92, Y.back + 24, 1, 60), '#3A3330')}${P(cutRect(r, DOOR.x - 40, Y.back - 6, 80, 8, .5), '#2A2422')}</g>`;
 
   /* back-counter props */
   const bc = (Y.wall + Y.back) / 2 + 6;
@@ -1100,7 +1105,7 @@ function buildScene() {
   { let cups = '';
     for (let i = 0; i < 6; i++) cups += P(cutCircle(r, REG.x0 + 40 + (i % 3) * 32, bc - 16 + Math.floor(i / 3) * 32, 14), pick(r, ['#FFF5E6', '#FFF5E6', '#F5B83D']));
     s += `<g filter="url(#ps)">${cups}</g>`;
-    s += `<g filter="url(#ps)">${P(cutRect(r, REG.x0 + 150, bc - 42, 130, 84, 1), '#2F2A28')}${[0, 1, 2, 3].map(i => P(cutCircle(r, REG.x0 + 172 + i * 29, bc - 8, 10), ['#D8463B', '#2E8C80', '#F5B83D', '#7DB34B'][i]) + P(cutRect(r, REG.x0 + 168 + i * 29, bc + 8, 8, 18, .3), '#8E979D')).join('')}</g>`; }
+    s += `<g filter="url(#ps)">${P(cutRect(r, REG.x0 + 122, bc - 42, 96, 84, 1), '#2F2A28')}${[0, 1, 2, 3].map(i => P(cutCircle(r, REG.x0 + 137 + i * 22, bc - 8, 8.5), ['#D8463B', '#2E8C80', '#F5B83D', '#7DB34B'][i]) + P(cutRect(r, REG.x0 + 133.5 + i * 22, bc + 8, 7, 18, .3), '#8E979D')).join('')}</g>`; }
 
   const out = { back: s };
   s = '';
@@ -1216,18 +1221,20 @@ function buildScene() {
   // comes out from behind the counter to clear their tray. Routes keep to the aisle (x = dx+275) and
   // the lanes between table rows (y = 320, 620); walkers are depth-sorted against the tables as they go.
   const AX = dx + 275, L1 = 320, L2 = 620;
-  const SEAT = [dx + 420, 412], TILL = [REG.x0 + REG.w + 12, ME_Y], GAP = [CX1 + 16, 250], CLEAR = [dx + 374, 362];
+  const SEAT = [dx + 420, 412], TILL = [REG.x0 + REG.w + 12, ME_Y], GAP = [CX1 + 16, 176], IN = [DOOR.x, DOOR.y], CLEAR = [dx + 374, 362];
   const guest = { shirt: '#D8463B', hair: '#3B2A23', skin: '#7A4C33', legs: '#3F4E6E' }, staff = { shirt: '#3D3939', hair: '#2B1E18', legs: '#2E2A2A', cap: 'var(--cb-red)' };
   const wdefs = [
     { d: `M${TILL} L${TILL[0]} ${L2} L${AX} ${L2} L${AX} ${L1} L${SEAT[0]} ${L1} L${SEAT}`, start: 0, len: 12, o: { ...guest, carry: 1 }, fadeIn: 1 },
     { d: `M${SEAT} L${SEAT[0]} ${L1} L${AX} ${L1} L${AX} ${L2} L${dx - 20} ${L2} L${dx - 60} 950 L150 950 L150 800`, start: 34, len: 56, o: guest, fadeOut: 1 },
-    { d: `M${GAP} L${GAP[0]} ${L1} L${CLEAR[0]} ${L1} L${CLEAR}`, start: 46, len: 6.5, o: staff, fadeIn: 1 },
-    { d: `M${CLEAR} L${CLEAR[0]} ${L1} L${GAP[0]} ${L1} L${GAP}`, start: 53, len: 6.5, o: { ...staff, carry: 1 }, fadeOut: 1 },
+    { d: `M${IN} L${DOOR.x} ${GAP[1]} L${GAP} L${GAP[0]} ${L1} L${CLEAR[0]} ${L1} L${CLEAR}`, start: 44, len: 8.5, o: staff, door: 'out' },
+    { d: `M${CLEAR} L${CLEAR[0]} ${L1} L${GAP[0]} ${L1} L${GAP} L${DOOR.x} ${GAP[1]} L${IN}`, start: 53, len: 8.5, o: { ...staff, carry: 1 }, door: 'in' },
   ];
   // when the guest is at the table, and when their tray is
   SEATED.span = [12, 34]; SEATED.food = [12, 52.5]; SEATED.x = SEAT[0];
   const CYCLE = 92;
   s += `<g id="wkHome"></g>`;
+  // the door's flap hangs above the walkers, so whoever goes through is hidden as it swings shut; hinged on the right
+  s += `<g transform="translate(${DOOR.x + 46} 0)"><g id="kFlap" filter="url(#ps)">${P(cutRect(r, -92, -20, 92, Y.back + 32, 1, 60), '#B9C2C7')}${P(cutRect(r, -86, Y.back - 24, 80, 28, .6), '#9AA4AA')}${P(cutCircle(r, -46, 46, 15), '#6E7A80')}${P(cutCircle(r, -46, 46, 11), '#D9E4E8')}${marker('M-52 40l8 -6M-50 50l10 -8', '#fff', 2, .8)}</g></g>`;
   wdefs.forEach((w, k) => {
     s += `<path id="wp${k}" d="${w.d}" fill="none" stroke="none"/>`;
     s += `<g class="wk" id="wk${k}" style="display:none"><g class="wflip">${sidePerson(w.o)}</g></g>`;
@@ -1555,6 +1562,12 @@ function tickWalkers() {
   const T = (now + 20) % WALKERS[0].cycle;   // a page opens with the guest already eating
   const within = ([a, b]) => T >= a && T < b;
   if (seen(SEATED.x)) { show(SEATED.d, within(SEATED.span)); show(SEATED.f, within(SEATED.food)); }
+  // the kitchen door swings open just before the server steps out, and shut just after they step back in
+  if (seen(DOOR.x)) {
+    const open = WALKERS.some(w => { const t = T - w.start; return w.door === 'out' ? t >= -.4 && t < 1.4 : w.door === 'in' ? t >= w.len - 1.4 && t < w.len + .4 : false; });
+    const k = Math.max(0, Math.min(2, FLAP.k + (open ? 1 : -1)));
+    if (k !== FLAP.k) { FLAP.k = k; FLAP.el.setAttribute('transform', `scale(${[1, .55, .12][k]} 1)`); }
+  }
   for (const w of WALKERS) {
     const t = T - w.start;
     if (!(t >= 0 && t < w.len)) { if (w.el.on && seen(w.x)) show(w.el, false); continue; }
@@ -1574,6 +1587,7 @@ function tickWalkers() {
     if (++w.n % 2 === 0) w.el.classList.toggle('alt');
   }
 }
+const FLAP = { el: document.getElementById('kFlap'), k: 0 };
 const TABLES = [...cam.querySelectorAll('.tbl')].map(el => ({ el, y: +el.dataset.y })).sort((a, b) => a.y - b.y), HOME = document.getElementById('wkHome');
 if (reduced) { LAYERS.forEach(l => l.pauseAnimations()); tickWalkers(); } else setInterval(tickWalkers, 125);
 
